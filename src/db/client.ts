@@ -16,3 +16,9 @@ export function getDb() {
 
   return db;
 }
+
+export function resetDbForTests() {
+  sqlite?.close();
+  sqlite = null;
+  db = null;
+}

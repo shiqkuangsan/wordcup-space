@@ -1,0 +1,115 @@
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { getDb } from "@/db/client";
+import {
+  betIntents,
+  betSlips,
+  executionAttempts,
+  portfolioLedgerEntries,
+  portfolios,
+} from "@/db/schema";
+import { canCreateBetSlip } from "@/domain/bet-lifecycle";
+import { getNextBalanceCents } from "@/domain/ledger";
+import { getPotentialReturnCents } from "@/domain/money";
+import { createId } from "@/server/actions/ids";
+
+const createBetSlipFromAttemptSchema = z.object({
+  executionAttemptId: z.string().min(1),
+  platformAccountId: z.string().min(1),
+  stakeCents: z.number().int().positive(),
+  finalOdds: z.number().positive(),
+  confirmationRef: z.string().optional(),
+  confirmationScreenshotPath: z.string().optional(),
+  isRealMoney: z.boolean().default(false),
+  placedAt: z.string().default(() => new Date().toISOString()),
+});
+
+export async function createBetSlipFromAttempt(
+  input: z.input<typeof createBetSlipFromAttemptSchema>,
+) {
+  const data = createBetSlipFromAttemptSchema.parse(input);
+  const db = getDb();
+
+  return db.transaction((tx) => {
+    const attempt = tx
+      .select()
+      .from(executionAttempts)
+      .where(eq(executionAttempts.id, data.executionAttemptId))
+      .get();
+
+    if (!attempt) throw new Error(`execution attempt not found: ${data.executionAttemptId}`);
+    if (!canCreateBetSlip(attempt)) throw new Error("execution attempt cannot create bet slip");
+
+    const intent = tx
+      .select()
+      .from(betIntents)
+      .where(eq(betIntents.id, attempt.betIntentId))
+      .get();
+
+    if (!intent) throw new Error(`bet intent not found: ${attempt.betIntentId}`);
+
+    const portfolio = tx
+      .select()
+      .from(portfolios)
+      .where(eq(portfolios.id, intent.portfolioId))
+      .get();
+
+    if (!portfolio) throw new Error(`portfolio not found: ${intent.portfolioId}`);
+
+    const nextBalance = getNextBalanceCents({
+      currentBalanceCents: portfolio.allocatedBalanceCents,
+      entryType: "stake_paid",
+      amountCents: data.stakeCents,
+    });
+
+    if (nextBalance < 0) throw new Error("insufficient portfolio balance");
+
+    const betSlip = {
+      id: createId("slip"),
+      betIntentId: intent.id,
+      executionAttemptId: attempt.id,
+      platformAccountId: data.platformAccountId,
+      portfolioId: intent.portfolioId,
+      decisionBy: intent.decisionBy,
+      placedBy: "user",
+      isRealMoney: data.isRealMoney,
+      mode: intent.mode,
+      stakeCents: data.stakeCents,
+      finalOdds: data.finalOdds,
+      potentialReturnCents: getPotentialReturnCents(data.stakeCents, data.finalOdds),
+      confirmationRef: data.confirmationRef,
+      confirmationScreenshotPath: data.confirmationScreenshotPath,
+      status: "open",
+      placedAt: data.placedAt,
+    };
+
+    tx.insert(betSlips).values(betSlip).run();
+    tx.update(portfolios)
+      .set({
+        allocatedBalanceCents: nextBalance,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(portfolios.id, intent.portfolioId))
+      .run();
+    tx.insert(portfolioLedgerEntries)
+      .values({
+        id: createId("ledger"),
+        portfolioId: intent.portfolioId,
+        entryType: "stake_paid",
+        amountCents: data.stakeCents,
+        balanceAfterCents: nextBalance,
+        currency: portfolio.currency,
+        isRealMoney: data.isRealMoney,
+        betSlipId: betSlip.id,
+        sourceActor: intent.decisionBy,
+        notes: "注单成交扣款。",
+      })
+      .run();
+    tx.update(betIntents)
+      .set({ status: "executed", updatedAt: new Date().toISOString() })
+      .where(eq(betIntents.id, intent.id))
+      .run();
+
+    return betSlip;
+  });
+}
