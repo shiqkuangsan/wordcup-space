@@ -1,0 +1,2 @@
+timestamp,entry_type,amount,balance,currency,source,notes
+2026-06-09T00:00:00+08:00,initial_bankroll,2000,2000,CNY,user,Initial simulated bankroll assigned to Codex
