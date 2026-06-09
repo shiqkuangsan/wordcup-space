@@ -1,54 +1,54 @@
-# Data Schemas
+# 数据结构
 
-## Odds Snapshot
+## 赔率快照
 
 Path: `data/manual/odds-snapshots.csv`
 
-| Field | Meaning |
+| 字段 | 含义 |
 |---|---|
-| `snapshot_id` | Stable id, e.g. `odds-20260609-001`. |
-| `captured_at` | ISO timestamp with timezone. |
-| `match_id` | Stable fixture id. |
-| `bookmaker` | Bet365, Betway, The Odds API, etc. |
-| `market` | `1X2`, `spread`, `total`, `both_teams_score`, etc. |
-| `selection` | Team/draw/over/under/line side. |
-| `line` | Handicap or total line, blank for pure `1X2`. |
-| `decimal_odds` | Decimal odds. |
-| `source_note` | URL, screenshot name, or manual note. |
+| `snapshot_id` | 稳定 id，例如 `odds-20260609-001`。 |
+| `captured_at` | 带时区的 ISO 时间戳。 |
+| `match_id` | 稳定比赛 id。 |
+| `bookmaker` | Bet365、Betway、The Odds API 等。 |
+| `market` | `1X2`、`spread`、`total`、`both_teams_score` 等。 |
+| `selection` | 球队/平局/大/小/盘口方向。 |
+| `line` | 让球或大小球盘口线；纯 `1X2` 可留空。 |
+| `decimal_odds` | 十进制赔率。 |
+| `source_note` | URL、截图名或手工说明。 |
 
-## Position
+## 持仓
 
 Path: `data/bankroll/positions.csv`
 
-| Field | Meaning |
+| 字段 | 含义 |
 |---|---|
-| `position_id` | Stable id. |
-| `created_at` | ISO timestamp with timezone. |
-| `mode` | `support`, `autonomous`, `parlay`, or `pass`. |
-| `match_id` | Fixture id or comma-separated legs for parlay. |
-| `market` | Market name. |
-| `selection` | Selected outcome. |
-| `stake` | Simulated stake. |
-| `odds` | Decimal odds. |
-| `model_probability` | Model probability from 0 to 1. |
-| `implied_probability` | Vig-adjusted or raw implied probability from 0 to 1. |
-| `expected_value` | Expected value as decimal ratio. |
-| `confidence` | `low`, `medium`, or `high`. |
-| `status` | `open`, `won`, `lost`, `void`, `cashout`, or `pass`. |
-| `profit_loss` | Settled P/L. |
-| `rationale` | Short reason. |
-| `review_note` | Post-match review. |
+| `position_id` | 稳定 id。 |
+| `created_at` | 带时区的 ISO 时间戳。 |
+| `mode` | `support`、`autonomous`、`parlay` 或 `pass`。 |
+| `match_id` | 比赛 id；串关时可记录多个 leg。 |
+| `market` | 市场名称。 |
+| `selection` | 选择的结果。 |
+| `stake` | 模拟下注金额。 |
+| `odds` | 十进制赔率。 |
+| `model_probability` | 模型概率，范围 0 到 1。 |
+| `implied_probability` | 去水后或原始隐含概率，范围 0 到 1。 |
+| `expected_value` | 期望值，使用小数比例。 |
+| `confidence` | `low`、`medium` 或 `high`。 |
+| `status` | `open`、`won`、`lost`、`void`、`cashout` 或 `pass`。 |
+| `profit_loss` | 结算盈亏。 |
+| `rationale` | 简短理由。 |
+| `review_note` | 赛后复盘。 |
 
-## Ledger
+## 台账
 
 Path: `data/bankroll/ledger.csv`
 
-| Field | Meaning |
+| 字段 | 含义 |
 |---|---|
-| `timestamp` | ISO timestamp with timezone. |
-| `entry_type` | `initial_bankroll`, `stake`, `settlement`, `adjustment`. |
-| `amount` | Signed amount. |
-| `balance` | Balance after entry. |
-| `currency` | Simulated currency label. |
-| `source` | User, Codex, settlement, etc. |
-| `notes` | Audit note. |
+| `timestamp` | 带时区的 ISO 时间戳。 |
+| `entry_type` | `initial_bankroll`、`stake`、`settlement`、`adjustment`。 |
+| `amount` | 带正负号的金额。 |
+| `balance` | 该条记录后的余额。 |
+| `currency` | 模拟币种标签。 |
+| `source` | 用户、Codex、结算等来源。 |
+| `notes` | 审计备注。 |

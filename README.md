@@ -1,56 +1,56 @@
 # wordcup-space
 
-World Cup match analysis, prediction, visualization, and simulated bankroll tracking.
+世界杯赛事记录、分析、预测、可视化，以及模拟资金管理。
 
-This repository is for two workflows:
+这个仓库主要服务两个目标：
 
-- Decision support for matches you personally care about.
-- Codex-managed simulated betting decisions with an initial bankroll of `2000`.
+- 辅助你判断喜欢的球队和具体比赛是否值得买。
+- 由 Codex 自主做模拟投注决策，初始模拟资金为 `2000`。
 
-The project is simulation-first. It can record real bookmaker odds and compare model probabilities to market prices, but it should not automate real-money betting or treat predictions as guarantees.
+项目默认是“模拟实战”，可以记录真实盘口赔率，并把模型概率和市场赔率做对比；但不做真实下注自动化，也不把任何预测当成确定结果。
 
-## Current Scope
+## 当前范围
 
-- Track every World Cup match with fixture, team, venue, odds, model view, final decision, and result.
-- Keep a clean simulated bankroll ledger starting from `2000`.
-- Build toward dashboards for bankroll curve, ROI, calibration, exposure, closing-line value, and match-level reasoning.
-- Use public/open data first, paid or browser-collected data only when useful and allowed.
+- 记录每场世界杯比赛：赛程、球队、场地、赔率、模型观点、最终决策和赛果。
+- 从 `2000` 初始资金开始，维护干净的模拟资金台账。
+- 后续建设可视化 dashboard：资金曲线、ROI、概率校准、风险敞口、收盘线价值、单场比赛分析卡片。
+- 优先使用公开/开放数据；付费数据或浏览器采集只在必要且允许时使用。
 
-## Data Strategy
+## 数据策略
 
-See [docs/data-sources.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/data-sources.md:1).
+参见 [docs/data-sources.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/data-sources.md:1)。
 
-Primary shape:
+初始方向：
 
-- Official schedule validation from FIFA.
-- Open fixture baseline from `openfootball/worldcup.json`.
-- API-Football or similar provider for fixtures, standings, injuries, lineups, and stats when API access is available.
-- Odds from user-provided Bet365/Betway snapshots, The Odds API, or browser-assisted capture.
+- 用 FIFA 官方赛程做最终校验。
+- 用 `openfootball/worldcup.json` 作为开放赛程基础数据。
+- 如果有 API key，用 API-Football 或类似服务补充赛程、积分、伤停、首发、技术统计。
+- 赔率来源优先用你提供的 Bet365/Betway 截图或文本，也可以评估 The Odds API，必要时再用浏览器辅助采集。
 
-## Operating Rules
+## 操作规则
 
-See [docs/operating-playbook.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/operating-playbook.md:1).
+参见 [docs/operating-playbook.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/operating-playbook.md:1)。
 
-Key defaults:
+关键默认值：
 
-- Initial simulated bankroll: `2000`.
-- Single match stake cap: normally `2%` of bankroll; high-conviction cap `4%`.
-- Parlay stake cap: `1%` of bankroll.
-- Daily loss cap: `8%` of bankroll.
-- Every recommendation must record probability, odds, expected value, stake, rationale, and post-match outcome.
+- 初始模拟资金：`2000`。
+- 单场普通下注上限：资金的 `2%`；高信心上限：`4%`。
+- 串关上限：资金的 `1%`。
+- 单日亏损上限：资金的 `8%`。
+- 每次推荐都必须记录概率、赔率、期望值、下注金额、理由和赛后结果。
 
-## Repository Layout
+## 仓库结构
 
 ```text
-docs/                 Project strategy, schemas, and operating rules
-data/manual/          User-entered odds and match notes
-data/bankroll/        Simulated bankroll ledger and positions
-data/raw/             Ignored provider/API dumps
-data/processed/       Ignored normalized model inputs/outputs
-data/exports/         Ignored dashboard/report exports
-src/                  Future ingestion, modeling, and visualization code
+docs/                 项目策略、数据结构、操作规则
+data/manual/          你手动提供或录入的赔率、比赛笔记
+data/bankroll/        模拟资金台账和持仓记录
+data/raw/             原始 API/provider 数据，默认不进 git
+data/processed/       标准化后的模型输入/输出，默认不进 git
+data/exports/         dashboard、图表、报告导出，默认不进 git
+src/                  后续的数据抓取、建模、可视化代码
 ```
 
-## AI Configuration
+## AI 配置
 
-Use `.env.example` as the template. Keep the real API key outside git.
+使用 `.env.example` 作为模板。真实 API key 只放在本地环境变量或本地 `.env`，不要进 git。

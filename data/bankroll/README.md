@@ -1,5 +1,5 @@
-# Bankroll Data
+# 资金数据
 
-This folder tracks Codex's simulated bankroll and positions.
+这里记录 Codex 的模拟资金和持仓。
 
-Initial bankroll: `2000`.
+初始资金：`2000`。

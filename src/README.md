@@ -1,9 +1,9 @@
-# Source Code
+# 源码目录
 
-Future code will live here:
+后续代码放这里：
 
-- ingestion adapters
-- normalization scripts
-- prediction model helpers
-- bankroll settlement logic
-- visualization app
+- 数据接入 adapter
+- 标准化脚本
+- 预测模型辅助逻辑
+- 资金结算逻辑
+- 可视化应用

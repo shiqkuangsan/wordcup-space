@@ -1,3 +1,3 @@
-# Processed Data
+# 处理后数据
 
-Normalized model inputs and outputs go here. The folder contents are ignored by git except this README.
+标准化后的模型输入和输出放这里。除了这个 README，本目录内容默认被 git 忽略。

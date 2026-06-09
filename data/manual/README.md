@@ -1,5 +1,5 @@
-# Manual Data
+# 手工数据
 
-Use this folder for user-entered odds snapshots, match notes, and source references.
+这里存放你手动提供或录入的赔率快照、比赛笔记和来源说明。
 
-Do not store sportsbook credentials, cookies, or account screenshots.
+不要保存投注平台账号凭据、cookies，或包含账号信息的截图。

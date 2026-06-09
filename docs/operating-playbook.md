@@ -1,69 +1,69 @@
-# Operating Playbook
+# 操作手册
 
-## Mission
+## 目标
 
-Use Codex to analyze every World Cup match, support the user's favorite-team decisions, and run an autonomous simulated betting book from an initial bankroll of `2000`.
+使用 Codex 分析每场世界杯比赛，辅助你判断喜欢的球队是否值得买，并让 Codex 从 `2000` 初始资金开始自主管理一个模拟投注账本。
 
-## Match Workflow
+## 单场比赛流程
 
-Each match should move through these states:
+每场比赛按下面状态推进：
 
-| State | Meaning |
+| 状态 | 含义 |
 |---|---|
-| `scheduled` | Fixture exists, no serious analysis yet. |
-| `priced` | At least one bookmaker odds snapshot is recorded. |
-| `analyzed` | Model probabilities and qualitative notes are recorded. |
-| `decided` | Stake decision is made: bet, pass, watchlist, or parlay leg. |
-| `settled` | Final result and bankroll impact are recorded. |
-| `reviewed` | Decision quality review is complete. |
+| `scheduled` | 已有赛程，但还没有正式分析。 |
+| `priced` | 至少记录了一组博彩公司赔率快照。 |
+| `analyzed` | 已记录模型概率和定性分析。 |
+| `decided` | 已做决策：下注、放弃、观察，或作为串关一腿。 |
+| `settled` | 已记录赛果和资金影响。 |
+| `reviewed` | 已完成赛后决策质量复盘。 |
 
-## Prediction Flow
+## 预测流程
 
-Default first version:
+第一版默认流程：
 
-1. Convert bookmaker odds to implied probabilities and remove vig.
-2. Build a baseline market prior from the best available price.
-3. Adjust with team strength, form, injuries, lineups, venue/travel/rest, tactical matchup, and tournament context.
-4. Produce probabilities for supported markets: `1X2`, Asian handicap/spread, totals, and selected props only when data quality is strong.
-5. Compare model probability to offered odds.
-6. Decide stake with bankroll rules.
-7. Record the decision before kickoff.
-8. After settlement, record result, closing-line value, and review notes.
+1. 把博彩公司赔率换算成隐含概率，并去除水位/抽水影响。
+2. 用最优可得赔率建立市场基准概率。
+3. 根据球队实力、近期状态、伤停、首发、场地/旅行/休息、战术对位、赛事背景做调整。
+4. 对支持的市场输出概率：`1X2`、让球/亚洲盘口、大小球；数据质量足够时再考虑部分特殊玩法。
+5. 比较模型概率和当前盘口赔率。
+6. 按资金规则决定下注金额。
+7. 开赛前记录决策。
+8. 赛后记录结果、收盘线价值和复盘。
 
-## Bankroll Rules
+## 资金规则
 
-Initial simulated bankroll: `2000`.
+初始模拟资金：`2000`。
 
-| Rule | Default |
+| 规则 | 默认值 |
 |---|---:|
-| Normal single stake cap | `2%` bankroll |
-| High-conviction single stake cap | `4%` bankroll |
-| Parlay stake cap | `1%` bankroll |
-| Daily loss cap | `8%` bankroll |
-| Minimum edge to bet | `3%` expected value |
-| Minimum data quality for autonomous bet | `medium` |
+| 普通单场下注上限 | 资金的 `2%` |
+| 高信心单场下注上限 | 资金的 `4%` |
+| 串关下注上限 | 资金的 `1%` |
+| 单日亏损上限 | 资金的 `8%` |
+| 出手最低优势 | `3%` 期望值 |
+| 自主下注最低数据质量 | `medium` |
 
-No chasing. A losing streak reduces risk; it does not justify larger stakes.
+不追损。连续亏损时降低风险，而不是加大下注。
 
-## Decision Modes
+## 决策模式
 
-| Mode | Purpose | Rule |
+| 模式 | 目的 | 规则 |
 |---|---|---|
-| `support` | Help user decide whether to back a favorite team | Emphasize risk, fair price, emotional premium, and alternatives. |
-| `autonomous` | Codex chooses simulated bets | Must obey bankroll rules and record rationale. |
-| `parlay` | Simulated multi-leg bet | Only use small stakes and record correlation risk. |
-| `pass` | No bet | A pass is a valid decision and should be counted. |
+| `support` | 帮你判断是否支持喜欢的球队 | 重点说明风险、公允赔率、情绪溢价和替代选择。 |
+| `autonomous` | Codex 自主选择模拟下注 | 必须遵守资金规则并记录理由。 |
+| `parlay` | 模拟串关 | 只允许小额，并记录相关性风险。 |
+| `pass` | 不下注 | 放弃也是有效决策，也要计入统计。 |
 
-## Visualization Targets
+## 可视化目标
 
-- Bankroll curve and drawdown.
-- ROI, yield, hit rate, and average odds.
-- Exposure by team, group, market, and bookmaker.
-- Model calibration: predicted probability bucket vs realized hit rate.
-- Closing-line value by market and bookmaker.
-- Match cards with pre-match rationale and post-match review.
-- Parlay tree and correlation notes.
+- 资金曲线和回撤。
+- ROI、yield、命中率、平均赔率。
+- 按球队、小组、市场、博彩公司统计风险敞口。
+- 模型校准：预测概率区间 vs 实际命中率。
+- 按市场和博彩公司统计收盘线价值。
+- 单场比赛卡片：赛前理由和赛后复盘。
+- 串关树和相关性说明。
 
-## AI Usage
+## AI 使用规则
 
-AI can summarize news, compare teams, critique reasoning, and draft match notes. It must not invent data. Every data-backed claim should reference a recorded source or be marked as an assumption.
+AI 可以总结新闻、比较球队、审查推理、起草比赛笔记。不能编造数据。每个数据型判断都要引用已记录来源，否则标记为假设。

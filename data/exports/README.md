@@ -1,3 +1,3 @@
-# Exports
+# 导出文件
 
-Generated dashboards, charts, reports, and snapshots go here. The folder contents are ignored by git except this README.
+生成的 dashboard、图表、报告和快照放这里。除了这个 README，本目录内容默认被 git 忽略。
