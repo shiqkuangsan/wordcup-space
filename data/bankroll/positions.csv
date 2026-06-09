@@ -1,1 +1,1 @@
-position_id,created_at,mode,match_id,market,selection,stake,odds,model_probability,implied_probability,expected_value,confidence,status,profit_loss,rationale,review_note
+position_id,created_at,created_by,portfolio_id,decision_by,placed_by,platform_account,is_real_money,mode,match_id,market,selection,stake,odds,model_probability,implied_probability,expected_value,confidence,status,profit_loss,rationale,review_note
