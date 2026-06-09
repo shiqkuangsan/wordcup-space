@@ -23,6 +23,10 @@ next-env.d.ts
 
 # Testing
 coverage/
+test-results/
+playwright-report/
+.playwright-mcp/
+phase1-*.png
 
 # Package managers
 .pnp
