@@ -14,3 +14,9 @@
 - 不要把全局 runtime 文件，例如 specs、roles、templates、source evidence 或 commands，复制进本项目。
 - 未经明确确认，不要删除、移动、取消跟踪或批量清理旧工作流 artifacts，例如 `todos/`。
 <!-- CATPAW:END -->
+
+<!-- BEGIN:nextjs-agent-rules -->
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+<!-- END:nextjs-agent-rules -->
