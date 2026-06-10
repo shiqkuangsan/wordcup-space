@@ -197,6 +197,71 @@ const TEAM_NAME_ALIASES: Record<string, string> = {
   wales: "威尔士",
 };
 
+const TEAM_FLAGS: Record<string, string> = {
+  阿根廷: "🇦🇷",
+  澳大利亚: "🇦🇺",
+  比利时: "🇧🇪",
+  波黑: "🇧🇦",
+  巴西: "🇧🇷",
+  佛得角: "🇨🇻",
+  喀麦隆: "🇨🇲",
+  加拿大: "🇨🇦",
+  南非: "🇿🇦",
+  奥地利: "🇦🇹",
+  阿尔及利亚: "🇩🇿",
+  智利: "🇨🇱",
+  中国: "🇨🇳",
+  捷克: "🇨🇿",
+  哥伦比亚: "🇨🇴",
+  哥斯达黎加: "🇨🇷",
+  科特迪瓦: "🇨🇮",
+  克罗地亚: "🇭🇷",
+  库拉索: "🇨🇼",
+  丹麦: "🇩🇰",
+  厄瓜多尔: "🇪🇨",
+  埃及: "🇪🇬",
+  英格兰: "\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}",
+  法国: "🇫🇷",
+  德国: "🇩🇪",
+  刚果民主共和国: "🇨🇩",
+  加纳: "🇬🇭",
+  海地: "🇭🇹",
+  洪都拉斯: "🇭🇳",
+  伊拉克: "🇮🇶",
+  伊朗: "🇮🇷",
+  意大利: "🇮🇹",
+  牙买加: "🇯🇲",
+  日本: "🇯🇵",
+  约旦: "🇯🇴",
+  韩国: "🇰🇷",
+  墨西哥: "🇲🇽",
+  摩洛哥: "🇲🇦",
+  荷兰: "🇳🇱",
+  新西兰: "🇳🇿",
+  尼日利亚: "🇳🇬",
+  挪威: "🇳🇴",
+  巴拿马: "🇵🇦",
+  巴拉圭: "🇵🇾",
+  秘鲁: "🇵🇪",
+  波兰: "🇵🇱",
+  葡萄牙: "🇵🇹",
+  卡塔尔: "🇶🇦",
+  沙特阿拉伯: "🇸🇦",
+  苏格兰: "\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}",
+  塞内加尔: "🇸🇳",
+  塞尔维亚: "🇷🇸",
+  西班牙: "🇪🇸",
+  瑞典: "🇸🇪",
+  瑞士: "🇨🇭",
+  突尼斯: "🇹🇳",
+  土耳其: "🇹🇷",
+  乌克兰: "🇺🇦",
+  乌兹别克斯坦: "🇺🇿",
+  乌拉圭: "🇺🇾",
+  美国: "🇺🇸",
+  威尔士: "\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}",
+};
+
 export function formatTeamName(name: string): string {
   const trimmed = name.trim();
   const lower = trimmed.toLowerCase();
@@ -217,4 +282,8 @@ export function formatTeamName(name: string): string {
 
 export function formatMatchTitle(homeTeam: string, awayTeam: string): string {
   return `${formatTeamName(homeTeam)} vs ${formatTeamName(awayTeam)}`;
+}
+
+export function getTeamFlag(name: string): string {
+  return TEAM_FLAGS[formatTeamName(name)] ?? "🏳";
 }
