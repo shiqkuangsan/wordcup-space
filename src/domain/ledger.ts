@@ -6,6 +6,8 @@ export type LedgerEntryType =
   | "settlement_win"
   | "settlement_loss"
   | "settlement_void"
+  | "settlement_half_win"
+  | "settlement_half_loss"
   | "cashout"
   | "adjustment";
 
@@ -21,6 +23,8 @@ export function getLedgerSignedAmount(entryType: LedgerEntryType, amountCents: n
     case "allocation_top_up":
     case "settlement_win":
     case "settlement_void":
+    case "settlement_half_win":
+    case "settlement_half_loss":
     case "cashout":
       return Math.abs(amountCents);
     case "allocation_withdrawal":

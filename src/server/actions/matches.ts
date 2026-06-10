@@ -13,6 +13,11 @@ const createMatchSchema = z.object({
   venue: z.string().optional(),
   status: z.string().default("scheduled"),
   dataSource: z.string().optional(),
+  externalId: z.string().optional(),
+  matchNumber: z.number().int().positive().optional(),
+  groupName: z.string().optional(),
+  sourceUrl: z.string().url().optional(),
+  lastSyncedAt: z.string().optional(),
 });
 
 export async function createMatch(input: z.input<typeof createMatchSchema>) {

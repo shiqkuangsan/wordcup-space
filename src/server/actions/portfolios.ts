@@ -14,7 +14,7 @@ const adjustPortfolioAllocationSchema = z.object({
     "adjustment",
   ]),
   amountCents: z.number().int(),
-  isRealMoney: z.boolean().default(false),
+  isRealMoney: z.boolean().default(true),
   sourceActor: z.string().default("user"),
   notes: z.string().min(1),
 });

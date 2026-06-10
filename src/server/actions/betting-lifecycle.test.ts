@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import Database from "better-sqlite3";
@@ -16,16 +16,16 @@ let tempDir: string;
 let dbPath: string;
 
 function applyMigration(databasePath: string) {
-  const sql = readFileSync(
-    path.join(process.cwd(), "drizzle/0000_youthful_taskmaster.sql"),
-    "utf8",
-  );
   const sqlite = new Database(databasePath);
   sqlite.pragma("foreign_keys = ON");
 
-  for (const statement of sql.split("--> statement-breakpoint")) {
-    const trimmed = statement.trim();
-    if (trimmed) sqlite.exec(trimmed);
+  const migrationDir = path.join(process.cwd(), "drizzle");
+  for (const fileName of readdirSync(migrationDir).filter((file) => file.endsWith(".sql")).sort()) {
+    const sql = readFileSync(path.join(migrationDir, fileName), "utf8");
+    for (const statement of sql.split("--> statement-breakpoint")) {
+      const trimmed = statement.trim();
+      if (trimmed) sqlite.exec(trimmed);
+    }
   }
 
   sqlite.close();

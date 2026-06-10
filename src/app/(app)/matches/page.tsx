@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatLocalMinute } from "@/domain/dates";
+import { formatMatchStage, formatMatchStatus } from "@/domain/match-sync";
 import { formatMatchTitle } from "@/domain/team-names";
 import { listMatches } from "@/server/queries/matches";
 
@@ -36,10 +37,10 @@ export default async function MatchesPage() {
                       {formatMatchTitle(match.homeTeam, match.awayTeam)}
                     </Link>
                   </TableCell>
-                  <TableCell>{match.stage}</TableCell>
+                  <TableCell>{formatMatchStage(match.stage)}</TableCell>
                   <TableCell className="font-mono text-xs tabular-nums">{formatLocalMinute(match.kickoffAt)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{match.status}</Badge>
+                    <Badge variant="outline">{formatMatchStatus(match.status)}</Badge>
                   </TableCell>
                 </TableRow>
               ))}

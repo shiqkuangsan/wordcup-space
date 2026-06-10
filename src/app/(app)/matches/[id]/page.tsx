@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { getDb } from "@/db/client";
 import { betIntents, betSlips, executionAttempts, matches, oddsSnapshots } from "@/db/schema";
 import { formatLocalMinute } from "@/domain/dates";
+import { formatMatchStage } from "@/domain/match-sync";
 import { formatMatchTitle, formatTeamName } from "@/domain/team-names";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   return (
     <div className="space-y-6">
       <div>
-        <p className="font-mono text-sm text-muted-foreground">{match.stage}</p>
+        <p className="font-mono text-sm text-muted-foreground">{formatMatchStage(match.stage)}</p>
         <h2 className="text-2xl font-semibold tracking-normal">
           {formatMatchTitle(match.homeTeam, match.awayTeam)}
         </h2>

@@ -13,7 +13,7 @@ export function AllocationForm() {
       portfolioId: String(formData.get("portfolioId")) as "user" | "codex",
       entryType: String(formData.get("entryType")) as "allocation_top_up" | "allocation_withdrawal" | "adjustment",
       amountCents: toCents(Number(formData.get("amount"))),
-      isRealMoney: formData.get("isRealMoney") === "true",
+      isRealMoney: formData.get("isRealMoney") !== "false",
       sourceActor: "user",
       notes: String(formData.get("notes")),
     });
@@ -44,6 +44,13 @@ export function AllocationForm() {
             </SelectContent>
           </Select>
           <Input name="amount" type="number" step="0.01" placeholder="金额" required />
+          <Select name="isRealMoney" defaultValue="true">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">真实资金</SelectItem>
+              <SelectItem value="false">模拟记录</SelectItem>
+            </SelectContent>
+          </Select>
           <Input name="notes" placeholder="备注" required />
           <Button type="submit" className="w-full">记录调整</Button>
         </form>

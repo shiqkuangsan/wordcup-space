@@ -9,11 +9,19 @@ import { createId } from "@/server/actions/ids";
 
 const settleBetSlipSchema = z.object({
   betSlipId: z.string().min(1),
-  result: z.enum(["won", "lost", "void", "cashout"]),
+  result: z.enum(["won", "lost", "void", "half_won", "half_lost", "cashout", "cancelled"]),
   cashoutAmountCents: z.number().int().nonnegative().optional(),
   settledBy: z.string().default("user"),
   sourceNote: z.string().min(1),
   settledAt: z.string().default(() => new Date().toISOString()),
+}).superRefine((data, ctx) => {
+  if (data.result === "cashout" && data.cashoutAmountCents === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["cashoutAmountCents"],
+      message: "cashout settlement requires cashoutAmountCents",
+    });
+  }
 });
 
 export async function settleBetSlip(input: z.input<typeof settleBetSlipSchema>) {

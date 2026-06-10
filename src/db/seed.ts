@@ -70,7 +70,7 @@ async function upsertDefaults() {
         amountCents: DEFAULT_CODEX_ALLOCATION_CENTS,
         balanceAfterCents: DEFAULT_CODEX_ALLOCATION_CENTS,
         currency: DEFAULT_CURRENCY,
-        isRealMoney: false,
+        isRealMoney: true,
         sourceActor: "user",
         notes: "Codex 初始建议额度，最终以用户实际分配为准。",
       })

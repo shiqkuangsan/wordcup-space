@@ -43,4 +43,30 @@ describe("settlement", () => {
       ledgerEntryType: "settlement_void",
     });
   });
+
+  it("supports Asian handicap half win and half loss", () => {
+    expect(
+      calculateSettlement({
+        result: "half_won",
+        stakeCents: 10000,
+        finalOdds: 2.2,
+      }),
+    ).toEqual({
+      payoutCents: 16000,
+      profitLossCents: 6000,
+      ledgerEntryType: "settlement_half_win",
+    });
+
+    expect(
+      calculateSettlement({
+        result: "half_lost",
+        stakeCents: 10000,
+        finalOdds: 2.2,
+      }),
+    ).toEqual({
+      payoutCents: 5000,
+      profitLossCents: -5000,
+      ledgerEntryType: "settlement_half_loss",
+    });
+  });
 });

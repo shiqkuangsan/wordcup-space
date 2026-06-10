@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const timestamps = {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -39,7 +39,7 @@ export const portfolioLedgerEntries = sqliteTable(
     amountCents: integer("amount_cents").notNull(),
     balanceAfterCents: integer("balance_after_cents").notNull(),
     currency: text("currency").notNull().default("CNY"),
-    isRealMoney: integer("is_real_money", { mode: "boolean" }).notNull().default(false),
+    isRealMoney: integer("is_real_money", { mode: "boolean" }).notNull().default(true),
     betSlipId: text("bet_slip_id"),
     sourceActor: text("source_actor").notNull().default("system"),
     notes: text("notes"),
@@ -61,9 +61,18 @@ export const matches = sqliteTable(
     venue: text("venue"),
     status: text("status").notNull().default("scheduled"),
     dataSource: text("data_source"),
+    externalId: text("external_id"),
+    matchNumber: integer("match_number"),
+    groupName: text("group_name"),
+    sourceUrl: text("source_url"),
+    lastSyncedAt: text("last_synced_at"),
     ...timestamps,
   },
-  (table) => [index("matches_kickoff_idx").on(table.kickoffAt)],
+  (table) => [
+    index("matches_kickoff_idx").on(table.kickoffAt),
+    index("matches_status_stage_idx").on(table.status, table.stage),
+    uniqueIndex("matches_source_external_idx").on(table.dataSource, table.externalId),
+  ],
 );
 
 export const matchResults = sqliteTable("match_results", {
@@ -188,7 +197,7 @@ export const betSlips = sqliteTable(
       .references(() => portfolios.id),
     decisionBy: text("decision_by").notNull(),
     placedBy: text("placed_by").notNull().default("user"),
-    isRealMoney: integer("is_real_money", { mode: "boolean" }).notNull().default(false),
+    isRealMoney: integer("is_real_money", { mode: "boolean" }).notNull().default(true),
     mode: text("mode").notNull(),
     stakeCents: integer("stake_cents").notNull(),
     finalOdds: real("final_odds").notNull(),

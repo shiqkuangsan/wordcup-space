@@ -11,6 +11,13 @@ import { createExecutionAttempt, markExecutionAttempt } from "@/server/actions/e
 
 type Intent = typeof betIntents.$inferSelect;
 
+const executionMethodOptions = [
+  { value: "user_manual", label: "用户代下单" },
+  { value: "chrome", label: "Chrome 自动操作" },
+  { value: "computer_use", label: "Computer Use 自动操作" },
+  { value: "browser_capture", label: "浏览器截图/页面识别" },
+];
+
 export function IntentCard({ intent }: { intent: Intent }) {
   async function action(formData: FormData) {
     "use server";
@@ -59,14 +66,20 @@ export function IntentCard({ intent }: { intent: Intent }) {
         </div>
         <p className="text-sm text-muted-foreground">{intent.rationale}</p>
         <form action={action} className="grid gap-3 md:grid-cols-2">
-          <Input name="platformAccountId" defaultValue="bet365-main" />
-          <Input name="executionMethod" defaultValue="user_manual" />
-          <Input name="observedOdds" type="number" step="0.01" defaultValue={intent.intendedTotalOdds} required />
-          <Input name="finalOdds" type="number" step="0.01" defaultValue={intent.intendedTotalOdds} required />
-          <Input name="stake" type="number" step="0.01" defaultValue={(intent.intendedStakeCents / 100).toFixed(2)} required />
-          <select name="isRealMoney" defaultValue="false" className="h-9 rounded-md border bg-background px-3 text-sm">
-            <option value="false">模拟记录</option>
+          <select name="platformAccountId" defaultValue="bet365-main" className="h-9 rounded-md border bg-background px-3 text-sm">
+            <option value="bet365-main">Bet365 主账户</option>
+          </select>
+          <select name="executionMethod" defaultValue="user_manual" className="h-9 rounded-md border bg-background px-3 text-sm">
+            {executionMethodOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          <Input name="observedOdds" type="number" step="0.01" placeholder="执行时看到的赔率" defaultValue={intent.intendedTotalOdds} required />
+          <Input name="finalOdds" type="number" step="0.01" placeholder="最终成交赔率" defaultValue={intent.intendedTotalOdds} required />
+          <Input name="stake" type="number" step="0.01" placeholder="最终成交金额" defaultValue={(intent.intendedStakeCents / 100).toFixed(2)} required />
+          <select name="isRealMoney" defaultValue="true" className="h-9 rounded-md border bg-background px-3 text-sm">
             <option value="true">真实资金</option>
+            <option value="false">模拟记录</option>
           </select>
           <Input name="confirmationRef" placeholder="平台注单号/确认备注" className="md:col-span-2" />
           <Textarea name="notes" placeholder="执行备注" className="md:col-span-2" />

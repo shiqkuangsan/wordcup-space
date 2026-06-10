@@ -20,7 +20,7 @@ const createBetSlipFromAttemptSchema = z.object({
   finalOdds: z.number().positive(),
   confirmationRef: z.string().optional(),
   confirmationScreenshotPath: z.string().optional(),
-  isRealMoney: z.boolean().default(false),
+  isRealMoney: z.boolean().default(true),
   placedAt: z.string().default(() => new Date().toISOString()),
 });
 

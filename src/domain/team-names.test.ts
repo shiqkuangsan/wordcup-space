@@ -10,6 +10,7 @@ describe("team name formatting", () => {
     expect(formatTeamName("Argentina")).toBe("阿根廷");
     expect(formatTeamName("JPN")).toBe("日本");
     expect(formatMatchTitle("United States", "Mexico")).toBe("美国 vs 墨西哥");
+    expect(formatMatchTitle("Bosnia & Herzegovina", "DR Congo")).toBe("波黑 vs 刚果民主共和国");
   });
 
   it("preserves suffixes used by tests or imported source labels", () => {
