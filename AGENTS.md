@@ -20,3 +20,9 @@
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
+
+## Codex 比赛分析接入
+
+- 外部 provider / agent 工具边界参见 `docs/provider-agent-integration.md`。
+- 创建 Codex 决策前，先按 `docs/codex-analysis-contract.md` 形成结构化分析，并默认走 `/api/intents` 的 `dryRun: true`。
+- `rezarahiminia/worldcup2026` 只作为 read-only 赛程/场馆/比分 provider；`machina-sports/sports-skills` 只作为 Codex/agent runtime 工具，不进入 app 运行时依赖。

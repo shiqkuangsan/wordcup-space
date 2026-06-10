@@ -1,6 +1,6 @@
 # wordcup-space
 
-世界杯赛事记录、分析、预测、可视化，以及模拟资金管理。
+世界杯赛事记录、分析、预测、可视化，以及真实/模拟资金管理。
 
 这个仓库主要服务两个目标：
 
@@ -14,7 +14,7 @@
 
 - 记录每场世界杯比赛：赛程、球队、场地、赔率、模型观点、最终决策和赛果。
 - 区分 `user` 和 `codex` 两个决策来源：谁做预测、谁负责额度、谁实际执行下单、是否真实资金都要记录清楚。
-- 后续建设可视化 dashboard：资金曲线、ROI、概率校准、风险敞口、收盘线价值、单场比赛分析卡片。
+- 建设可视化 dashboard：资金曲线、ROI、概率校准、风险敞口、收盘线价值、单场比赛分析卡片。
 - 优先使用公开/开放数据；付费数据或浏览器采集只在必要且允许时使用。
 
 ## 数据策略
@@ -25,6 +25,8 @@
 
 - 用 FIFA 官方赛程做最终校验。
 - 用 `openfootball/worldcup.json` 作为开放赛程基础数据。
+- 评估 `rezarahiminia/worldcup2026` 作为 104 场赛程、场馆、球队、比分和积分榜补充源。
+- 把 `machina-sports/sports-skills` 作为 Codex/agent 工作流工具，不作为 app 运行时依赖。
 - 如果有 API key，用 API-Football 或类似服务补充赛程、积分、伤停、首发、技术统计。
 - 赔率来源优先用你提供的 Bet365/Betway 截图或文本，也可以评估 The Odds API，必要时再用浏览器辅助采集。
 
@@ -34,12 +36,14 @@
 
 系统端到端流程参见 [docs/system-workflow.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/system-workflow.md:1)，包含赛程同步、盘口录入、决策、执行、成交、结算、账本和复盘闭环。
 
+外部 provider 与 Codex 工作流接入参见 [docs/provider-agent-integration.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/provider-agent-integration.md:1)。
+
 关键默认值：
 
 - Codex 可配置独立额度；初始建议额度约 `1000`，以你实际分配为准。
-- 单场普通下注上限：资金的 `2%`；高信心上限：`4%`。
-- 串关上限：资金的 `1%`。
-- 单日亏损上限：资金的 `8%`。
+- 单场普通下注上限：资金的 `10%`；高信心上限：`20%`。
+- 串关上限：资金的 `5%`。
+- 单日亏损上限：资金的 `40%`。
 - 每次推荐都必须记录概率、赔率、期望值、下注金额、理由和赛后结果。
 
 ## 仓库结构

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "betting": {
+      "source": "machina-sports/sports-skills",
+      "sourceType": "github",
+      "skillPath": "skills/betting/SKILL.md",
+      "computedHash": "68553920d1e81e540a915509c5ccd1854862c7610adb4608605fdfe410ac25d1"
+    },
+    "football-data": {
+      "source": "machina-sports/sports-skills",
+      "sourceType": "github",
+      "skillPath": "skills/football-data/SKILL.md",
+      "computedHash": "0f73f9a953adc04fe939fc944da8b4e6c36d88ac50d52298a1beafc007a8bf4e"
+    },
+    "markets": {
+      "source": "machina-sports/sports-skills",
+      "sourceType": "github",
+      "skillPath": "skills/markets/SKILL.md",
+      "computedHash": "d1661966b265b7f0b2c2179f301f8732b30a783b934482766de4190305d221f8"
+    }
+  }
+}

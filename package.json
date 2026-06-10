@@ -11,6 +11,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.ts",
     "sync:worldcup2026": "tsx src/scripts/sync-worldcup-2026.ts",
+    "sync:worldcup2026:api": "tsx src/scripts/sync-worldcup-2026-api.ts",
     "test": "vitest run",
     "e2e": "playwright test"
   },

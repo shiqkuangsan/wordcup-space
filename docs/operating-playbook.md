@@ -111,6 +111,15 @@ is_real_money = true
 
 AI 可以总结新闻、比较球队、审查推理、起草比赛笔记。不能编造数据。每个数据型判断都要引用已记录来源，否则标记为假设。
 
+Codex 不需要把强 AI 能力内置到 app。默认策略是：
+
+- app 负责可靠记录：赛程、盘口、决策、执行、注单、结算和资金账本。
+- Codex 负责研究和解释：必要时调用 agent skills、公开网页或本地 provider 数据，再把结果整理成结构化理由。
+- `machina-sports/sports-skills` 只作为 Codex/agent 工具安装，不作为 Next.js 运行时依赖。
+- `rezarahiminia/worldcup2026` 只作为赛程/球队/场馆/比分 provider，不直接生成下注建议。
+- 所有 Codex 决策默认先走 `dryRun` 或人工确认；外部工具不得绕过 `/api/intents`、`/api/bet-slips` 和风控规则。
+- 市场价格、预测市场和新闻情绪只能作为参考信号，不能写成确定性结论。
+
 ## 当前支持玩法
 
 - 全场/半场：胜平负、让球、大小球。

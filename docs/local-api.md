@@ -10,6 +10,21 @@ npm run sync:worldcup2026
 
 当前脚本使用 OpenFootball 的公开 JSON 数据源，只导入小组赛 72 场；后续如果需要 FIFA 官方页面二次校验，可由 Codex 浏览器读取后再走 `POST /api/matches/sync` 覆盖更新。
 
+## 同步 worldcup2026 API
+
+```bash
+npm run sync:worldcup2026:api
+```
+
+这个脚本读取 `https://worldcup26.ir/get/games` 和 `/get/stadiums`，把可标准化的比赛写入 `matches`。它只同步比赛事实和比分状态元数据，不创建赔率、决策、注单、资金流水或结算。
+
+可选环境变量：
+
+| 变量 | 说明 |
+|---|---|
+| `WORLDCUP2026_API_BASE_URL` | 覆盖默认 API base URL，默认 `https://worldcup26.ir`。 |
+| `WORLDCUP2026_API_TOKEN` | 如果 provider 后续要求 JWT，可作为 Bearer token 发送；当前公开读取不强制。 |
+
 ## 同步赛程
 
 `POST /api/matches/sync`
@@ -37,6 +52,8 @@ npm run sync:worldcup2026
 ## 创建决策
 
 `POST /api/intents`
+
+Codex 分析输出契约参见 [docs/codex-analysis-contract.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/codex-analysis-contract.md:1)。
 
 截图/口述解析后默认先传 `dryRun: true`。预览不会写库，确认无误后再去掉 `dryRun` 正式创建。
 
