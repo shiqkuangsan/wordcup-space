@@ -143,9 +143,8 @@ export const betIntentLegs = sqliteTable(
     betIntentId: text("bet_intent_id")
       .notNull()
       .references(() => betIntents.id),
-    matchId: text("match_id")
-      .notNull()
-      .references(() => matches.id),
+    matchId: text("match_id").references(() => matches.id),
+    matchText: text("match_text"),
     market: text("market").notNull(),
     selection: text("selection").notNull(),
     line: text("line"),
@@ -168,6 +167,8 @@ export const executionAttempts = sqliteTable(
     platformAccountId: text("platform_account_id").references(() => platformAccounts.id),
     intendedOdds: real("intended_odds").notNull(),
     observedOdds: real("observed_odds"),
+    oddsFormat: text("odds_format").notNull().default("decimal"),
+    rawObservedOdds: real("raw_observed_odds"),
     oddsChangePct: real("odds_change_pct"),
     oddsTolerancePct: real("odds_tolerance_pct").notNull().default(0.06),
     failureReason: text("failure_reason"),
@@ -201,6 +202,8 @@ export const betSlips = sqliteTable(
     mode: text("mode").notNull(),
     stakeCents: integer("stake_cents").notNull(),
     finalOdds: real("final_odds").notNull(),
+    oddsFormat: text("odds_format").notNull().default("decimal"),
+    rawOdds: real("raw_odds"),
     potentialReturnCents: integer("potential_return_cents").notNull(),
     confirmationRef: text("confirmation_ref"),
     confirmationScreenshotPath: text("confirmation_screenshot_path"),
@@ -222,13 +225,14 @@ export const betSlipLegs = sqliteTable(
     betSlipId: text("bet_slip_id")
       .notNull()
       .references(() => betSlips.id),
-    matchId: text("match_id")
-      .notNull()
-      .references(() => matches.id),
+    matchId: text("match_id").references(() => matches.id),
+    matchText: text("match_text"),
     market: text("market").notNull(),
     selection: text("selection").notNull(),
     line: text("line"),
     finalOdds: real("final_odds").notNull(),
+    oddsFormat: text("odds_format").notNull().default("decimal"),
+    rawOdds: real("raw_odds"),
     status: text("status").notNull().default("open"),
     legOrder: integer("leg_order").notNull(),
     notes: text("notes"),

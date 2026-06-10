@@ -5,6 +5,7 @@ export type MarketType =
   | "handicap"
   | "total"
   | "nth_goal"
+  | "highest_scoring_half"
   | "parlay";
 
 export const BET_PERIOD_OPTIONS: Array<{ value: BetPeriod; label: string }> = [
@@ -17,6 +18,7 @@ export const MARKET_TYPE_OPTIONS: Array<{ value: MarketType; label: string; need
   { value: "handicap", label: "让球", needsLine: true },
   { value: "total", label: "大小球", needsLine: true },
   { value: "nth_goal", label: "第 N 个进球球队", needsLine: true },
+  { value: "highest_scoring_half", label: "进球最多的半场", needsLine: false },
   { value: "parlay", label: "串关", needsLine: false },
 ];
 

@@ -1,4 +1,5 @@
 import { addBetIntentLeg, createBetIntent } from "@/server/actions/intents";
+import { buildIntentPreview, isDryRunRequest } from "@/server/api/previews";
 import { apiError, apiOk } from "@/server/api/responses";
 
 type IntentLegInput = {
@@ -14,6 +15,10 @@ type IntentLegInput = {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown> & { legs?: IntentLegInput[] };
+    if (isDryRunRequest(body)) {
+      return apiOk(buildIntentPreview(body));
+    }
+
     const { legs = [] } = body;
     const intendedStakeCents =
       typeof body.intendedStakeCents === "number"

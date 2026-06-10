@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db/client";
 import { executionAttempts } from "@/db/schema";
-import { getOddsChangePct } from "@/domain/odds";
+import { getOddsChangePct, normalizeOddsFormat, toDecimalOdds } from "@/domain/odds";
 import { createId } from "@/server/actions/ids";
 
 const createExecutionAttemptSchema = z.object({
@@ -11,6 +11,8 @@ const createExecutionAttemptSchema = z.object({
   platformAccountId: z.string().optional(),
   intendedOdds: z.number().positive(),
   observedOdds: z.number().positive().optional(),
+  oddsFormat: z.enum(["decimal", "hong_kong"]).default("decimal"),
+  rawObservedOdds: z.number().positive().optional(),
   oddsTolerancePct: z.number().positive().default(0.06),
   status: z.string().default("pending"),
   notes: z.string().optional(),
@@ -20,17 +22,25 @@ const markExecutionAttemptSchema = z.object({
   id: z.string().min(1),
   status: z.enum(["running", "succeeded", "failed", "cancelled"]),
   observedOdds: z.number().positive().optional(),
+  oddsFormat: z.enum(["decimal", "hong_kong"]).optional(),
+  rawObservedOdds: z.number().positive().optional(),
   failureReason: z.string().optional(),
   notes: z.string().optional(),
 });
 
 export async function createExecutionAttempt(input: z.input<typeof createExecutionAttemptSchema>) {
   const data = createExecutionAttemptSchema.parse(input);
+  const oddsFormat = normalizeOddsFormat(data.oddsFormat);
+  const observedOdds = data.rawObservedOdds == null
+    ? data.observedOdds
+    : toDecimalOdds(data.rawObservedOdds, oddsFormat);
   const oddsChangePct =
-    data.observedOdds == null ? undefined : getOddsChangePct(data.intendedOdds, data.observedOdds);
+    observedOdds == null ? undefined : getOddsChangePct(data.intendedOdds, observedOdds);
   const row = {
     id: createId("attempt"),
     ...data,
+    oddsFormat,
+    observedOdds,
     oddsChangePct,
     startedAt: new Date().toISOString(),
   };
@@ -51,15 +61,21 @@ export async function markExecutionAttempt(input: z.input<typeof markExecutionAt
 
   if (!attempt) throw new Error(`execution attempt not found: ${data.id}`);
 
+  const oddsFormat = normalizeOddsFormat(data.oddsFormat ?? attempt.oddsFormat);
+  const observedOdds = data.rawObservedOdds == null
+    ? data.observedOdds
+    : toDecimalOdds(data.rawObservedOdds, oddsFormat);
   const oddsChangePct =
-    data.observedOdds == null
+    observedOdds == null
       ? attempt.oddsChangePct
-      : getOddsChangePct(attempt.intendedOdds, data.observedOdds);
+      : getOddsChangePct(attempt.intendedOdds, observedOdds);
 
   db.update(executionAttempts)
     .set({
       status: data.status,
-      observedOdds: data.observedOdds ?? attempt.observedOdds,
+      observedOdds: observedOdds ?? attempt.observedOdds,
+      oddsFormat,
+      rawObservedOdds: data.rawObservedOdds ?? attempt.rawObservedOdds,
       oddsChangePct,
       failureReason: data.failureReason,
       notes: data.notes ?? attempt.notes,
@@ -71,5 +87,5 @@ export async function markExecutionAttempt(input: z.input<typeof markExecutionAt
     .where(eq(executionAttempts.id, data.id))
     .run();
 
-  return { ...attempt, ...data, oddsChangePct };
+  return { ...attempt, ...data, observedOdds: observedOdds ?? attempt.observedOdds, oddsFormat, oddsChangePct };
 }

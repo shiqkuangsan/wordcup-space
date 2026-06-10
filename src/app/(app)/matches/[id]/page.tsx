@@ -1,13 +1,11 @@
+import Link from "next/link";
 import { eq } from "drizzle-orm";
-import { OddsEntryForm } from "@/components/matches/odds-entry-form";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDb } from "@/db/client";
-import { betIntents, betSlips, executionAttempts, matches, oddsSnapshots } from "@/db/schema";
+import { betIntentLegs, betIntents, betSlipLegs, betSlips, executionAttempts, matches } from "@/db/schema";
 import { formatLocalMinute } from "@/domain/dates";
-import { formatMatchStage } from "@/domain/match-sync";
-import { formatMatchTitle, formatTeamName } from "@/domain/team-names";
+import { formatMatchStage, formatMatchStatus } from "@/domain/match-sync";
+import { formatMatchTitle } from "@/domain/team-names";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +13,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const { id } = await params;
   const db = getDb();
   const match = db.select().from(matches).where(eq(matches.id, id)).get();
-  const odds = db.select().from(oddsSnapshots).where(eq(oddsSnapshots.matchId, id)).all();
-  const intents = db.select().from(betIntents).all();
-  const attempts = db.select().from(executionAttempts).all();
-  const slips = db.select().from(betSlips).all();
+  const intentLegs = db.select().from(betIntentLegs).where(eq(betIntentLegs.matchId, id)).all();
+  const slipLegs = db.select().from(betSlipLegs).where(eq(betSlipLegs.matchId, id)).all();
+  const intentIds = new Set(intentLegs.map((leg) => leg.betIntentId));
+  const slipIds = new Set(slipLegs.map((leg) => leg.betSlipId));
+  const intents = db.select().from(betIntents).all().filter((intent) => intentIds.has(intent.id));
+  const attempts = db.select().from(executionAttempts).all().filter((attempt) => intentIds.has(attempt.betIntentId));
+  const slips = db.select().from(betSlips).all().filter((slip) => slipIds.has(slip.id));
 
   if (!match) return <div>比赛不存在。</div>;
 
@@ -29,53 +30,32 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <h2 className="text-2xl font-semibold tracking-normal">
           {formatMatchTitle(match.homeTeam, match.awayTeam)}
         </h2>
-        <p className="text-sm text-muted-foreground">{formatLocalMinute(match.kickoffAt)}</p>
+        <p className="text-sm text-muted-foreground">
+          {formatLocalMinute(match.kickoffAt)}
+          {match.venue ? ` · ${match.venue}` : ""}
+          {match.groupName ? ` · ${match.groupName} 组` : ""}
+          {` · ${formatMatchStatus(match.status)}`}
+        </p>
       </div>
-      <OddsEntryForm matchId={match.id} />
-      <Card>
-        <CardHeader>
-          <CardTitle>赔率快照</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>公司</TableHead>
-                <TableHead>市场</TableHead>
-                <TableHead>选择</TableHead>
-                <TableHead>赔率</TableHead>
-                <TableHead>来源</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {odds.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.bookmaker}</TableCell>
-                  <TableCell>{row.market}</TableCell>
-                  <TableCell>{formatTeamName(row.selection)}</TableCell>
-                  <TableCell>{row.decimalOdds.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{row.sourceType}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader><CardTitle>决策</CardTitle></CardHeader>
-          <CardContent className="text-sm text-muted-foreground">{intents.length} 条 intent</CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>执行</CardTitle></CardHeader>
-          <CardContent className="text-sm text-muted-foreground">{attempts.length} 次 attempt</CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>注单</CardTitle></CardHeader>
-          <CardContent className="text-sm text-muted-foreground">{slips.length} 张 slip</CardContent>
-        </Card>
+        <Link href={`/intents?matchId=${encodeURIComponent(id)}`} className="block">
+          <Card className="transition-colors hover:border-foreground/40 hover:bg-muted/40">
+            <CardHeader><CardTitle>决策</CardTitle></CardHeader>
+            <CardContent className="text-sm text-muted-foreground">{intents.length} 条 intent</CardContent>
+          </Card>
+        </Link>
+        <Link href={`/intents?matchId=${encodeURIComponent(id)}&view=attempts`} className="block">
+          <Card className="transition-colors hover:border-foreground/40 hover:bg-muted/40">
+            <CardHeader><CardTitle>执行</CardTitle></CardHeader>
+            <CardContent className="text-sm text-muted-foreground">{attempts.length} 次 attempt</CardContent>
+          </Card>
+        </Link>
+        <Link href={`/bets?matchId=${encodeURIComponent(id)}`} className="block">
+          <Card className="transition-colors hover:border-foreground/40 hover:bg-muted/40">
+            <CardHeader><CardTitle>注单</CardTitle></CardHeader>
+            <CardContent className="text-sm text-muted-foreground">{slips.length} 张 slip</CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   );

@@ -1,56 +1,12 @@
-import { revalidatePath } from "next/cache";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { formatBetModeLabel, formatDecisionByLabel, formatIntentStatus, formatRiskTierLabel } from "@/domain/display-labels";
 import { formatCny } from "@/domain/money";
 import type { betIntents } from "@/db/schema";
-import { createBetSlipFromAttempt } from "@/server/actions/bet-slips";
-import { createExecutionAttempt, markExecutionAttempt } from "@/server/actions/execution-attempts";
 
 type Intent = typeof betIntents.$inferSelect;
 
-const executionMethodOptions = [
-  { value: "user_manual", label: "用户代下单" },
-  { value: "chrome", label: "Chrome 自动操作" },
-  { value: "computer_use", label: "Computer Use 自动操作" },
-  { value: "browser_capture", label: "浏览器截图/页面识别" },
-];
-
 export function IntentCard({ intent }: { intent: Intent }) {
-  async function action(formData: FormData) {
-    "use server";
-    const observedOdds = Number(formData.get("observedOdds"));
-    const attempt = await createExecutionAttempt({
-      betIntentId: intent.id,
-      executionMethod: String(formData.get("executionMethod")) as "user_manual",
-      platformAccountId: String(formData.get("platformAccountId")),
-      intendedOdds: intent.intendedTotalOdds,
-      observedOdds,
-      status: "pending",
-      notes: String(formData.get("notes") || ""),
-    });
-    await markExecutionAttempt({
-      id: attempt.id,
-      status: "succeeded",
-      observedOdds,
-      notes: "执行成功，准备生成注单。",
-    });
-    await createBetSlipFromAttempt({
-      executionAttemptId: attempt.id,
-      platformAccountId: String(formData.get("platformAccountId")),
-      stakeCents: Math.round(Number(formData.get("stake")) * 100),
-      finalOdds: Number(formData.get("finalOdds")),
-      isRealMoney: formData.get("isRealMoney") === "true",
-      confirmationRef: String(formData.get("confirmationRef") || ""),
-    });
-    revalidatePath("/intents");
-    revalidatePath("/bets");
-    revalidatePath("/");
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -66,26 +22,6 @@ export function IntentCard({ intent }: { intent: Intent }) {
           <div>风险：{formatRiskTierLabel(intent.riskTier)}</div>
         </div>
         <p className="text-sm text-muted-foreground">{intent.rationale}</p>
-        <form action={action} className="grid gap-3 md:grid-cols-2">
-          <select name="platformAccountId" defaultValue="bet365-main" className="h-9 rounded-md border bg-background px-3 text-sm">
-            <option value="bet365-main">Bet365 主账户</option>
-          </select>
-          <select name="executionMethod" defaultValue="user_manual" className="h-9 rounded-md border bg-background px-3 text-sm">
-            {executionMethodOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-          <Input name="observedOdds" type="number" step="0.01" placeholder="执行时看到的赔率" defaultValue={intent.intendedTotalOdds} required />
-          <Input name="finalOdds" type="number" step="0.01" placeholder="最终成交赔率" defaultValue={intent.intendedTotalOdds} required />
-          <Input name="stake" type="number" step="0.01" placeholder="最终成交金额" defaultValue={(intent.intendedStakeCents / 100).toFixed(2)} required />
-          <select name="isRealMoney" defaultValue="true" className="h-9 rounded-md border bg-background px-3 text-sm">
-            <option value="true">真实资金</option>
-            <option value="false">模拟记录</option>
-          </select>
-          <Input name="confirmationRef" placeholder="平台注单号/确认备注" className="md:col-span-2" />
-          <Textarea name="notes" placeholder="执行备注" className="md:col-span-2" />
-          <Button type="submit" className="md:col-span-2">标记执行成功并生成注单</Button>
-        </form>
       </CardContent>
     </Card>
   );

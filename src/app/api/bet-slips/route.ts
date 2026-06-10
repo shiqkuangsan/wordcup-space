@@ -1,17 +1,29 @@
 import { createBetSlipFromAttempt } from "@/server/actions/bet-slips";
 import { createExecutionAttempt, markExecutionAttempt } from "@/server/actions/execution-attempts";
+import { buildBetSlipPreview, isDryRunRequest } from "@/server/api/previews";
 import { apiError, apiOk } from "@/server/api/responses";
+import { normalizeOddsFormat, toDecimalOdds } from "@/domain/odds";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const observedOdds = Number(body.observedOdds ?? body.finalOdds);
+    if (isDryRunRequest(body)) {
+      return apiOk(buildBetSlipPreview(body));
+    }
+
+    const oddsFormat = normalizeOddsFormat(body.oddsFormat);
+    const rawOdds = Number(body.rawOdds ?? body.finalOdds);
+    const finalOdds = toDecimalOdds(rawOdds, oddsFormat);
+    const rawObservedOdds = Number(body.rawObservedOdds ?? body.observedOdds ?? rawOdds);
+    const observedOdds = toDecimalOdds(rawObservedOdds, oddsFormat);
     const attempt = await createExecutionAttempt({
       betIntentId: body.betIntentId,
       executionMethod: body.executionMethod ?? "user_manual",
       platformAccountId: body.platformAccountId,
-      intendedOdds: Number(body.intendedOdds ?? body.finalOdds),
+      intendedOdds: Number(body.intendedOdds ?? finalOdds),
       observedOdds,
+      oddsFormat,
+      rawObservedOdds,
       status: "pending",
       notes: body.executionNotes ?? "",
     });
@@ -20,6 +32,8 @@ export async function POST(request: Request) {
       id: attempt.id,
       status: "succeeded",
       observedOdds,
+      oddsFormat,
+      rawObservedOdds,
       notes: body.executionNotes ?? "API 记录：已执行成功。",
     });
 
@@ -28,7 +42,9 @@ export async function POST(request: Request) {
       executionAttemptId: attempt.id,
       platformAccountId: body.platformAccountId,
       stakeCents,
-      finalOdds: Number(body.finalOdds),
+      finalOdds,
+      oddsFormat,
+      rawOdds,
       confirmationRef: body.confirmationRef,
       confirmationScreenshotPath: body.confirmationScreenshotPath,
       isRealMoney: body.isRealMoney !== false,

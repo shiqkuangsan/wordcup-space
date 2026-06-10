@@ -27,19 +27,23 @@ test("phase 1 happy path records and settles a Codex bet", async ({ page }) => {
   await page.getByRole("button", { name: "保存 intent" }).click();
   await expect(page.getByText(rationale)).toBeVisible();
 
-  await page.getByPlaceholder("平台注单号/确认备注").first().fill(ticket);
-  await page.getByRole("button", { name: "标记执行成功并生成注单" }).first().click();
-  await expect(page.getByText("已成交").first()).toBeVisible();
-
   await page.getByRole("link", { name: "注单中心" }).click();
+  await page.getByRole("tab", { name: "成交" }).click();
+  const betForm = page.locator("form").filter({ has: page.locator('select[name="betIntentId"]') });
+  await betForm.getByPlaceholder("成交金额").fill("10");
+  await betForm.getByPlaceholder("成交赔率").fill("1.9");
+  await betForm.getByPlaceholder("注单号/确认号").fill(ticket);
+  await betForm.getByRole("button", { name: "预览" }).click();
+  await expect(page.getByText("成交预览可写入")).toBeVisible();
+  await betForm.getByRole("button", { name: "确认写入" }).click();
   await expect(page.getByRole("cell", { name: ticket })).toBeVisible();
-  const slipValue = await page
-    .locator('select[name="betSlipId"] option')
-    .filter({ hasText: ticket })
-    .getAttribute("value");
-  await page.locator('select[name="betSlipId"]').selectOption(slipValue ?? "");
-  await page.getByPlaceholder("结算依据，例如 平台已结算/截图/比分来源").fill("E2E 结算");
-  await page.getByRole("button", { name: "结算" }).click();
+
+  await page.getByRole("tab", { name: "结算" }).click();
+  const settlementForm = page.locator("form").filter({ has: page.locator('select[name="betSlipId"]') });
+  await settlementForm.getByPlaceholder("结算依据，例如 平台已结算/截图/比分来源").fill("E2E 结算");
+  await settlementForm.getByRole("button", { name: "预览" }).click();
+  await expect(page.getByText("结算预览可写入")).toBeVisible();
+  await settlementForm.getByRole("button", { name: "确认写入" }).click();
   await expect(page.getByRole("row", { name: new RegExp(`赢.*${ticket}|${ticket}.*赢`) })).toBeVisible();
 
   await page.getByRole("link", { name: "资金账本" }).click();

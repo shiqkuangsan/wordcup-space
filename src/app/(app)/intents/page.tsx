@@ -1,15 +1,26 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { IntentCard } from "@/components/intents/intent-card";
 import { IntentForm } from "@/components/intents/intent-form";
 import { getDb } from "@/db/client";
-import { betIntents, matches } from "@/db/schema";
+import { betIntentLegs, betIntents, matches } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
-export default async function IntentsPage() {
+export default async function IntentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ matchId?: string }>;
+}) {
+  const { matchId } = await searchParams;
   const db = getDb();
   const allMatches = db.select().from(matches).orderBy(desc(matches.kickoffAt)).all();
-  const intents = db.select().from(betIntents).orderBy(desc(betIntents.createdAt)).all();
+  const allIntents = db.select().from(betIntents).orderBy(desc(betIntents.createdAt)).all();
+  const intentIdsForMatch = matchId
+    ? new Set(db.select().from(betIntentLegs).where(eq(betIntentLegs.matchId, matchId)).all().map((leg) => leg.betIntentId))
+    : undefined;
+  const intents = intentIdsForMatch
+    ? allIntents.filter((intent) => intentIdsForMatch.has(intent.id))
+    : allIntents;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
