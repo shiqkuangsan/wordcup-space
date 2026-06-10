@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 
 test("phase 1 happy path records and settles a Codex bet", async ({ page }) => {
   const runId = Date.now();
-  const homeTeam = `Argentina ${runId}`;
-  const awayTeam = `Japan ${runId}`;
+  const homeTeam = `阿根廷 ${runId}`;
+  const awayTeam = `日本 ${runId}`;
   const rationale = `E2E Codex 测试下注 ${runId}`;
   const ticket = `e2e-ticket-${runId}`;
 
@@ -11,16 +11,16 @@ test("phase 1 happy path records and settles a Codex bet", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "总览 Dashboard" })).toBeVisible();
 
   await page.getByRole("link", { name: "比赛中心" }).click();
-  await page.getByPlaceholder("阶段，例如 group").fill("group");
-  await page.getByPlaceholder("开球时间 ISO").fill("2026-06-12T20:00:00+08:00");
-  await page.getByPlaceholder("主队").fill(homeTeam);
-  await page.getByPlaceholder("客队").fill(awayTeam);
+  await page.getByPlaceholder("阶段，例如 小组赛").fill("小组赛");
+  await page.getByPlaceholder("开球时间，例如 2026-06-12 20:00").fill("2026-06-12T20:00:00+08:00");
+  await page.getByPlaceholder("主队，例如 阿根廷").fill(homeTeam);
+  await page.getByPlaceholder("客队，例如 日本").fill(awayTeam);
   await page.getByRole("button", { name: "保存比赛" }).click();
   await expect(page.getByRole("link", { name: `${homeTeam} vs ${awayTeam}` })).toBeVisible();
 
   await page.getByRole("link", { name: "决策队列" }).click();
   await page.getByPlaceholder("市场，例如 1X2").fill("1X2");
-  await page.getByPlaceholder("选择，例如 Argentina").fill(homeTeam);
+  await page.getByPlaceholder("选择，例如 阿根廷胜").fill(`${homeTeam} 胜`);
   await page.getByPlaceholder("预期金额").fill("10");
   await page.getByPlaceholder("预期总赔率").fill("1.9");
   await page.getByPlaceholder("决策理由").fill(rationale);

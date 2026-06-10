@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { formatMatchTitle } from "@/domain/team-names";
 import { addBetIntentLeg, createBetIntent } from "@/server/actions/intents";
 import type { matches } from "@/db/schema";
 
@@ -62,12 +63,12 @@ export function IntentForm({ matches }: { matches: Match[] }) {
             <option value="">暂不绑定比赛</option>
             {matches.map((match) => (
               <option key={match.id} value={match.id}>
-                {match.homeTeam} vs {match.awayTeam}
+                {formatMatchTitle(match.homeTeam, match.awayTeam)}
               </option>
             ))}
           </select>
           <Input name="market" placeholder="市场，例如 1X2" required />
-          <Input name="selection" placeholder="选择，例如 Argentina" required />
+          <Input name="selection" placeholder="选择，例如 阿根廷胜" required />
           <Input name="stake" type="number" step="0.01" placeholder="预期金额" required />
           <Input name="odds" type="number" step="0.01" placeholder="预期总赔率" required />
           <Input name="riskTier" defaultValue="normal" />

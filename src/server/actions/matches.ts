@@ -4,7 +4,7 @@ import { matches } from "@/db/schema";
 import { createId } from "@/server/actions/ids";
 
 const createMatchSchema = z.object({
-  competition: z.string().default("FIFA World Cup"),
+  competition: z.string().default("世界杯"),
   season: z.string().default("2026"),
   stage: z.string().min(1),
   homeTeam: z.string().min(1),

@@ -3,6 +3,8 @@ import { MatchForm } from "@/components/matches/match-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatLocalMinute } from "@/domain/dates";
+import { formatMatchTitle } from "@/domain/team-names";
 import { listMatches } from "@/server/queries/matches";
 
 export const dynamic = "force-dynamic";
@@ -31,11 +33,11 @@ export default async function MatchesPage() {
                 <TableRow key={match.id}>
                   <TableCell>
                     <Link href={`/matches/${match.id}`} className="font-medium hover:underline">
-                      {match.homeTeam} vs {match.awayTeam}
+                      {formatMatchTitle(match.homeTeam, match.awayTeam)}
                     </Link>
                   </TableCell>
                   <TableCell>{match.stage}</TableCell>
-                  <TableCell className="font-mono text-xs">{match.kickoffAt}</TableCell>
+                  <TableCell className="font-mono text-xs tabular-nums">{formatLocalMinute(match.kickoffAt)}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{match.status}</Badge>
                   </TableCell>

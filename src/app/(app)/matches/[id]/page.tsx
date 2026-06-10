@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDb } from "@/db/client";
 import { betIntents, betSlips, executionAttempts, matches, oddsSnapshots } from "@/db/schema";
+import { formatLocalMinute } from "@/domain/dates";
+import { formatMatchTitle, formatTeamName } from "@/domain/team-names";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +26,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       <div>
         <p className="font-mono text-sm text-muted-foreground">{match.stage}</p>
         <h2 className="text-2xl font-semibold tracking-normal">
-          {match.homeTeam} vs {match.awayTeam}
+          {formatMatchTitle(match.homeTeam, match.awayTeam)}
         </h2>
-        <p className="text-sm text-muted-foreground">{match.kickoffAt}</p>
+        <p className="text-sm text-muted-foreground">{formatLocalMinute(match.kickoffAt)}</p>
       </div>
       <OddsEntryForm matchId={match.id} />
       <Card>
@@ -49,7 +51,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
                 <TableRow key={row.id}>
                   <TableCell>{row.bookmaker}</TableCell>
                   <TableCell>{row.market}</TableCell>
-                  <TableCell>{row.selection}</TableCell>
+                  <TableCell>{formatTeamName(row.selection)}</TableCell>
                   <TableCell>{row.decimalOdds.toFixed(2)}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{row.sourceType}</Badge>

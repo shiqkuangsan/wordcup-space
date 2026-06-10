@@ -32,7 +32,7 @@ export function OddsEntryForm({ matchId }: { matchId: string }) {
         <form action={action} className="grid gap-3 md:grid-cols-2">
           <Input name="bookmaker" placeholder="bookmaker，例如 bet365" required />
           <Input name="market" placeholder="市场，例如 1X2" required />
-          <Input name="selection" placeholder="选择，例如 Argentina" required />
+          <Input name="selection" placeholder="选择，例如 阿根廷胜 / 日本 +0.5" required />
           <Input name="line" placeholder="盘口线，可空" />
           <Input name="decimalOdds" type="number" step="0.01" placeholder="十进制赔率" required />
           <Input name="capturedAt" placeholder="捕获时间，默认当前" />
