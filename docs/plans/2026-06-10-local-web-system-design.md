@@ -105,6 +105,8 @@ bet_intent
 - `placed_by=user` 不代表用户决策，只代表用户执行。
 - `portfolio_id=codex` 才算 Codex 额度。
 
+用户视角完整使用流程沉淀在 [docs/system-workflow.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/system-workflow.md:1)，覆盖从打开工作台、挑比赛、录盘口、决策、执行、成交、结算到账本复盘的闭环。
+
 ## 赔率变化容忍
 
 执行时最终赔率可能不同于决策时赔率。容忍规则：

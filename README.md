@@ -32,6 +32,8 @@
 
 参见 [docs/operating-playbook.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/operating-playbook.md:1)。
 
+系统端到端流程参见 [docs/system-workflow.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/system-workflow.md:1)，包含赛程同步、盘口录入、决策、执行、成交、结算、账本和复盘闭环。
+
 关键默认值：
 
 - Codex 可配置独立额度；初始建议额度约 `1000`，以你实际分配为准。

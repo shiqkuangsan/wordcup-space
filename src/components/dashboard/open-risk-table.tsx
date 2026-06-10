@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatActorLabel, formatBetSlipStatus, formatDecisionByLabel } from "@/domain/display-labels";
 import { formatCny } from "@/domain/money";
 import type { betSlips } from "@/db/schema";
 
@@ -26,12 +27,12 @@ export function OpenRiskTable({ slips }: { slips: Slip[] }) {
           <TableBody>
             {slips.map((slip) => (
               <TableRow key={slip.id}>
-                <TableCell>{slip.portfolioId}</TableCell>
-                <TableCell>{slip.decisionBy}</TableCell>
+                <TableCell>{formatActorLabel(slip.portfolioId)}</TableCell>
+                <TableCell>{formatDecisionByLabel(slip.decisionBy)}</TableCell>
                 <TableCell>{formatCny(slip.stakeCents)}</TableCell>
                 <TableCell>{slip.finalOdds.toFixed(2)}</TableCell>
                 <TableCell>
-                  <Badge variant="outline">{slip.status}</Badge>
+                  <Badge variant="outline">{formatBetSlipStatus(slip.status)}</Badge>
                 </TableCell>
               </TableRow>
             ))}

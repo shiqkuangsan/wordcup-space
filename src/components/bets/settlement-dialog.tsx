@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { formatActorLabel, formatDecisionByLabel } from "@/domain/display-labels";
 import { formatCny } from "@/domain/money";
 import { SETTLEMENT_RESULT_OPTIONS } from "@/domain/settlement";
 import { settleBetSlip } from "@/server/actions/settlements";
@@ -34,7 +35,7 @@ export function SettlementDialog({ openSlips }: { openSlips: Slip[] }) {
             <option value="">选择一张未结算注单</option>
             {openSlips.map((slip) => (
               <option key={slip.id} value={slip.id}>
-                {slip.confirmationRef || slip.id} | {slip.portfolioId}/{slip.decisionBy} | {formatCny(slip.stakeCents)} @ {slip.finalOdds.toFixed(2)} | 最高返还 {formatCny(slip.potentialReturnCents)}
+                {slip.confirmationRef || slip.id} | {formatActorLabel(slip.portfolioId)} / {formatDecisionByLabel(slip.decisionBy)} | {formatCny(slip.stakeCents)} @ {slip.finalOdds.toFixed(2)} | 最高返还 {formatCny(slip.potentialReturnCents)}
               </option>
             ))}
           </select>

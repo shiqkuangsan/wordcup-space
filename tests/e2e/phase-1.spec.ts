@@ -29,7 +29,7 @@ test("phase 1 happy path records and settles a Codex bet", async ({ page }) => {
 
   await page.getByPlaceholder("平台注单号/确认备注").first().fill(ticket);
   await page.getByRole("button", { name: "标记执行成功并生成注单" }).first().click();
-  await expect(page.getByText("executed").first()).toBeVisible();
+  await expect(page.getByText("已成交").first()).toBeVisible();
 
   await page.getByRole("link", { name: "注单中心" }).click();
   await expect(page.getByRole("cell", { name: ticket })).toBeVisible();
@@ -43,5 +43,5 @@ test("phase 1 happy path records and settles a Codex bet", async ({ page }) => {
   await expect(page.getByRole("row", { name: new RegExp(`赢.*${ticket}|${ticket}.*赢`) })).toBeVisible();
 
   await page.getByRole("link", { name: "资金账本" }).click();
-  await expect(page.getByRole("cell", { name: "settlement_win" }).first()).toBeVisible();
+  await expect(page.getByRole("cell", { name: "赢单结算" }).first()).toBeVisible();
 });

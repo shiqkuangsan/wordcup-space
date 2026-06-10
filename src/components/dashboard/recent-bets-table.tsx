@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatLocalMinute } from "@/domain/dates";
+import { formatActorLabel, formatBetModeLabel } from "@/domain/display-labels";
 import { formatCny } from "@/domain/money";
 import type { betSlips } from "@/db/schema";
 
@@ -26,8 +27,8 @@ export function RecentBetsTable({ slips }: { slips: Slip[] }) {
           <TableBody>
             {slips.map((slip) => (
               <TableRow key={slip.id}>
-                <TableCell>{slip.mode}</TableCell>
-                <TableCell>{slip.portfolioId}</TableCell>
+                <TableCell>{formatBetModeLabel(slip.mode)}</TableCell>
+                <TableCell>{formatActorLabel(slip.portfolioId)}</TableCell>
                 <TableCell>{formatCny(slip.stakeCents)}</TableCell>
                 <TableCell>{formatCny(slip.potentialReturnCents)}</TableCell>
                 <TableCell className="font-mono text-xs tabular-nums">{formatLocalMinute(slip.placedAt)}</TableCell>

@@ -1,5 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatLocalMinute } from "@/domain/dates";
+import { formatActorLabel } from "@/domain/display-labels";
+import { formatLedgerEntryType } from "@/domain/ledger";
 import { formatCny } from "@/domain/money";
 import type { portfolioLedgerEntries } from "@/db/schema";
 
@@ -22,8 +24,8 @@ export function LedgerTable({ entries }: { entries: Entry[] }) {
         {entries.map((entry) => (
           <TableRow key={entry.id}>
             <TableCell className="font-mono text-xs tabular-nums">{formatLocalMinute(entry.createdAt)}</TableCell>
-            <TableCell>{entry.portfolioId}</TableCell>
-            <TableCell>{entry.entryType}</TableCell>
+            <TableCell>{formatActorLabel(entry.portfolioId)}</TableCell>
+            <TableCell>{formatLedgerEntryType(entry.entryType)}</TableCell>
             <TableCell>{formatCny(entry.amountCents)}</TableCell>
             <TableCell>{formatCny(entry.balanceAfterCents)}</TableCell>
             <TableCell>{entry.notes}</TableCell>

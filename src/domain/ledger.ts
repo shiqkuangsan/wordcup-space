@@ -11,11 +11,29 @@ export type LedgerEntryType =
   | "cashout"
   | "adjustment";
 
+export const LEDGER_ENTRY_TYPE_LABELS: Record<LedgerEntryType, string> = {
+  allocation_initial: "初始额度",
+  allocation_top_up: "追加额度",
+  allocation_withdrawal: "提取额度",
+  stake_paid: "下注扣款",
+  settlement_win: "赢单结算",
+  settlement_loss: "输单结算",
+  settlement_void: "走水退款",
+  settlement_half_win: "半赢结算",
+  settlement_half_loss: "半输结算",
+  cashout: "提前兑现",
+  adjustment: "人工调整",
+};
+
 type NextBalanceInput = {
   currentBalanceCents: number;
   entryType: LedgerEntryType;
   amountCents: number;
 };
+
+export function formatLedgerEntryType(entryType: string): string {
+  return LEDGER_ENTRY_TYPE_LABELS[entryType as LedgerEntryType] ?? entryType;
+}
 
 export function getLedgerSignedAmount(entryType: LedgerEntryType, amountCents: number) {
   switch (entryType) {

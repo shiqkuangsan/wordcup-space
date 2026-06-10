@@ -41,7 +41,7 @@ export default async function DashboardPage() {
           {balancePoints.length ? (
             <BalanceChart points={balancePoints} />
           ) : (
-            <p className="text-sm text-muted-foreground">暂无 ledger 数据。</p>
+            <p className="text-sm text-muted-foreground">暂无资金流水数据。</p>
           )}
         </CardContent>
       </Card>

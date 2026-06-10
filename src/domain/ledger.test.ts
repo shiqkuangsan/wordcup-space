@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getLedgerSignedAmount, getNextBalanceCents } from "@/domain/ledger";
+import { formatLedgerEntryType, getLedgerSignedAmount, getNextBalanceCents } from "@/domain/ledger";
 
 describe("ledger", () => {
   it("adds allocations and top ups", () => {
@@ -47,5 +47,13 @@ describe("ledger", () => {
         amountCents: 10000,
       }),
     ).toBe(90000);
+  });
+
+  it("formats ledger entry types for UI", () => {
+    expect(formatLedgerEntryType("allocation_initial")).toBe("初始额度");
+    expect(formatLedgerEntryType("allocation_top_up")).toBe("追加额度");
+    expect(formatLedgerEntryType("stake_paid")).toBe("下注扣款");
+    expect(formatLedgerEntryType("settlement_win")).toBe("赢单结算");
+    expect(formatLedgerEntryType("unknown_type")).toBe("unknown_type");
   });
 });
