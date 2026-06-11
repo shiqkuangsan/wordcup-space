@@ -65,7 +65,7 @@ export function ListFilterForm({
           <Search />
           查询
         </Button>
-        <Button asChild type="button" variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm">
           <Link href={action}>
             <RotateCcw />
             重置

@@ -63,7 +63,12 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
-      <ReviewDashboard byDecision={summary.review.byDecision} byMarket={summary.review.byMarket} />
+      <ReviewDashboard
+        profitLossTimeline={summary.review.profitLossTimeline}
+        executionQuality={summary.review.executionQuality}
+        byDecision={summary.review.byDecision}
+        byMarket={summary.review.byMarket}
+      />
       <div className="grid gap-4 xl:grid-cols-2">
         <OpenRiskTable slips={summary.openBetSlips} />
         <RecentBetsTable slips={summary.recentBetSlips} />

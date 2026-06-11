@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { betIntentLegs, betIntents, betSlipLegs, betSlips, executionAttempts, matches, oddsSnapshots, portfolioLedgerEntries, portfolios, settlements } from "@/db/schema";
 import { localDateKey } from "@/domain/dates";
@@ -9,19 +9,17 @@ export async function getDashboardSummary() {
   const db = getDb();
   const allMatches = db.select().from(matches).all();
   const allBetSlips = db.select().from(betSlips).all();
+  const allIntentRows = db.select().from(betIntents).all();
   const settlementRows = db.select().from(settlements).all();
   const attemptRows = db.select().from(executionAttempts).all();
   const slipLegRows = db.select().from(betSlipLegs).all();
   const intentLegRows = db.select().from(betIntentLegs).all();
   const oddsRows = db.select().from(oddsSnapshots).all();
-  const pendingIntentRows = db
-    .select()
-    .from(betIntents)
-    .where(eq(betIntents.status, "proposed"))
-    .all();
+  const pendingIntentRows = allIntentRows.filter((intent) => intent.status === "proposed");
   const settlementsBySlip = new Map(settlementRows.map((settlement) => [settlement.betSlipId, settlement]));
   const attemptsById = new Map(attemptRows.map((attempt) => [attempt.id, attempt]));
   const slipsById = new Map(allBetSlips.map((slip) => [slip.id, slip]));
+  const intentsById = new Map(allIntentRows.map((intent) => [intent.id, intent]));
   const matchesById = new Map(allMatches.map((match) => [match.id, match]));
   const oddsCountByMatch = new Map<string, number>();
   const marketBreakdown = new Map<string, {
@@ -30,6 +28,15 @@ export async function getDashboardSummary() {
     openExposureCents: number;
     settledStakeCents: number;
     profitLossCents: number;
+  }>();
+  const executionQuality = new Map<string, {
+    decisionBy: string;
+    attemptCount: number;
+    successCount: number;
+    failedCount: number;
+    toleranceBreachCount: number;
+    oddsChangeTotal: number;
+    oddsChangeCount: number;
   }>();
   const todayKey = localDateKey(new Date());
   const upcomingMatches = allMatches
@@ -70,6 +77,54 @@ export async function getDashboardSummary() {
     }
     marketBreakdown.set(leg.market, existing);
   }
+
+  for (const attempt of attemptRows) {
+    const intent = intentsById.get(attempt.betIntentId);
+    if (!intent) continue;
+
+    const existing = executionQuality.get(intent.decisionBy) ?? {
+      decisionBy: intent.decisionBy,
+      attemptCount: 0,
+      successCount: 0,
+      failedCount: 0,
+      toleranceBreachCount: 0,
+      oddsChangeTotal: 0,
+      oddsChangeCount: 0,
+    };
+
+    existing.attemptCount += 1;
+    if (["succeeded", "executed"].includes(attempt.status)) existing.successCount += 1;
+    if (attempt.status === "failed") existing.failedCount += 1;
+    if (attempt.oddsChangePct != null) {
+      existing.oddsChangeTotal += Number(attempt.oddsChangePct);
+      existing.oddsChangeCount += 1;
+      if (Number(attempt.oddsChangePct) >= Number(attempt.oddsTolerancePct)) {
+        existing.toleranceBreachCount += 1;
+      }
+    }
+
+    executionQuality.set(intent.decisionBy, existing);
+  }
+
+  const cumulativeProfitLoss = { user: 0, codex: 0 };
+  const profitLossTimeline = settlementRows
+    .map((settlement) => {
+      const slip = slipsById.get(settlement.betSlipId);
+      if (!slip || !["user", "codex"].includes(slip.decisionBy)) return null;
+      return { settlement, slip };
+    })
+    .filter((row) => row !== null)
+    .sort((a, b) => new Date(a.settlement.settledAt).getTime() - new Date(b.settlement.settledAt).getTime())
+    .map(({ settlement, slip }) => {
+      const decisionBy = slip.decisionBy as "user" | "codex";
+      cumulativeProfitLoss[decisionBy] += settlement.profitLossCents;
+
+      return {
+        label: `${settlement.settledAt.slice(5, 10)} ${settlement.settledAt.slice(11, 16)}`,
+        user: cumulativeProfitLoss.user / 100,
+        codex: cumulativeProfitLoss.codex / 100,
+      };
+    });
 
   return {
     portfolios: db.select().from(portfolios).all(),
@@ -143,6 +198,18 @@ export async function getDashboardSummary() {
         .slice(0, 8),
     },
     review: {
+      profitLossTimeline,
+      executionQuality: Array.from(executionQuality.values())
+        .map((row) => ({
+          decisionBy: row.decisionBy,
+          attemptCount: row.attemptCount,
+          successCount: row.successCount,
+          failedCount: row.failedCount,
+          toleranceBreachCount: row.toleranceBreachCount,
+          averageOddsChangePct:
+            row.oddsChangeCount > 0 ? row.oddsChangeTotal / row.oddsChangeCount : null,
+        }))
+        .sort((a, b) => a.decisionBy.localeCompare(b.decisionBy)),
       byDecision: summarizeReviewByDecision(
         allBetSlips.map((slip) => ({
           decisionBy: slip.decisionBy,

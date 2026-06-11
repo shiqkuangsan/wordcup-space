@@ -31,6 +31,13 @@ export function LedgerTable({ entries }: { entries: Entry[] }) {
             <TableCell>{entry.notes}</TableCell>
           </TableRow>
         ))}
+        {entries.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={6} className="text-muted-foreground">
+              暂无资金流水。
+            </TableCell>
+          </TableRow>
+        ) : null}
       </TableBody>
     </Table>
   );
