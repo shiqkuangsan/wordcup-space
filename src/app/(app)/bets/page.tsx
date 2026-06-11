@@ -65,7 +65,7 @@ export default async function BetsPage({
           action="/bets"
           activeCount={activeFilterCount}
           fields={[
-            { name: "q", label: "搜索", value: q, placeholder: "球队 / 选择 / 确认号 / slip" },
+            { name: "q", label: "搜索", value: q, placeholder: "球队 / 选择 / 确认号 / 决策ID" },
             {
               name: "status",
               label: "状态",

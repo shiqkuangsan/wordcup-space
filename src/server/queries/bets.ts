@@ -62,6 +62,7 @@ export async function listBetSlips(filters: ListBetSlipFilters = {}) {
     if (filters.market && !slipLegs.some((leg) => leg.market === filters.market)) return false;
     if (!matchesText(filters.q ?? "", [
       slip.id,
+      slip.betIntentId,
       slip.confirmationRef,
       slip.matchSummary,
       slip.selectionSummary,

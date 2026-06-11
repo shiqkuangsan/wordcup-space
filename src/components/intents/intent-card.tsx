@@ -17,10 +17,12 @@ type PlatformAccount = typeof platformAccounts.$inferSelect;
 export function IntentCard({
   intent,
   legs,
+  betSlipCount = 0,
   platformAccounts,
 }: {
   intent: Intent;
   legs: IntentLeg[];
+  betSlipCount?: number;
   platformAccounts: PlatformAccount[];
 }) {
   return (
@@ -28,7 +30,17 @@ export function IntentCard({
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2 text-base">
           <span>{formatDecisionByLabel(intent.decisionBy)} / {formatBetModeLabel(intent.mode)}</span>
-          <Badge variant="outline">{formatIntentStatus(intent.status)}</Badge>
+          <span className="flex items-center gap-2">
+            {betSlipCount > 0 ? (
+              <Link
+                href={`/bets?q=${encodeURIComponent(intent.id)}`}
+                className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                查看注单 {betSlipCount}
+              </Link>
+            ) : null}
+            <Badge variant="outline">{formatIntentStatus(intent.status)}</Badge>
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

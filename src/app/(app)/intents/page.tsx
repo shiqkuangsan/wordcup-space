@@ -3,7 +3,7 @@ import { ListFilterForm } from "@/components/filters/list-filter-form";
 import { IntentCard } from "@/components/intents/intent-card";
 import { IntentForm } from "@/components/intents/intent-form";
 import { getDb } from "@/db/client";
-import { betIntentLegs, betIntents, matches, platformAccounts } from "@/db/schema";
+import { betIntentLegs, betIntents, betSlips, matches, platformAccounts } from "@/db/schema";
 import { formatMarketLabel } from "@/domain/betting-markets";
 import { formatLocalMinute } from "@/domain/dates";
 import { formatBetModeLabel, formatDecisionByLabel, formatIntentStatus, formatRiskTierLabel } from "@/domain/display-labels";
@@ -30,14 +30,20 @@ export default async function IntentsPage({
   const allMatches = db.select().from(matches).orderBy(desc(matches.kickoffAt)).all();
   const allIntents = db.select().from(betIntents).orderBy(desc(betIntents.createdAt)).all();
   const allIntentLegs = db.select().from(betIntentLegs).all();
+  const allBetSlips = db.select().from(betSlips).all();
   const activePlatformAccounts = db.select().from(platformAccounts).where(eq(platformAccounts.isActive, true)).all();
   const matchesById = new Map(allMatches.map((match) => [match.id, match]));
   const legsByIntent = new Map<string, typeof allIntentLegs>();
+  const slipCountByIntent = new Map<string, number>();
 
   for (const leg of allIntentLegs) {
     const existing = legsByIntent.get(leg.betIntentId) ?? [];
     existing.push(leg);
     legsByIntent.set(leg.betIntentId, existing);
+  }
+
+  for (const slip of allBetSlips) {
+    slipCountByIntent.set(slip.betIntentId, (slipCountByIntent.get(slip.betIntentId) ?? 0) + 1);
   }
 
   const intents = allIntents.filter((intent) => {
@@ -173,6 +179,7 @@ export default async function IntentsPage({
                   matchTitle: match ? formatMatchTitle(match.homeTeam, match.awayTeam) : (leg.matchText ?? undefined),
                 };
               })}
+            betSlipCount={slipCountByIntent.get(intent.id) ?? 0}
             platformAccounts={activePlatformAccounts}
           />
         ))}

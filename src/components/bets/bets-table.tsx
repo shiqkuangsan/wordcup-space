@@ -37,7 +37,14 @@ export function BetsTable({ slips, emptyText }: { slips: Slip[]; emptyText: stri
           <TableRow key={slip.id}>
             <TableCell><Badge variant="outline">{formatBetSlipStatus(slip.status)}</Badge></TableCell>
             <TableCell>{formatActorLabel(slip.portfolioId)}</TableCell>
-            <TableCell>{formatDecisionByLabel(slip.decisionBy)}</TableCell>
+            <TableCell>
+              <Link
+                href={`/intents?q=${encodeURIComponent(slip.betIntentId)}`}
+                className="text-foreground underline-offset-4 hover:underline"
+              >
+                {formatDecisionByLabel(slip.decisionBy)}
+              </Link>
+            </TableCell>
             <TableCell>
               {slip.matchLinks?.length ? (
                 <div className="space-y-1">
