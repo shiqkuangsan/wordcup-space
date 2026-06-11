@@ -3,12 +3,14 @@ import { CalendarDays, CheckCircle2, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MatchSyncPanel } from "@/components/matches/sync-panel";
 import { Separator } from "@/components/ui/separator";
 import { formatLocalDateLabel, formatLocalMinute, formatLocalTime, localDateKey } from "@/domain/dates";
 import { formatMatchStage, formatMatchStatus } from "@/domain/match-sync";
 import { formatTeamName, getTeamFlag } from "@/domain/team-names";
 import { listMatches } from "@/server/queries/matches";
-import { ensureWorldCup2026MatchesFresh, WORLDCUP_2026_SOURCE_NAME } from "@/server/actions/worldcup-sync";
+import { ensureWorldCup2026MatchesFresh } from "@/server/actions/worldcup-sync";
+import { WORLDCUP2026_API_SOURCE_NAME } from "@/server/providers/worldcup2026-api";
 
 export const dynamic = "force-dynamic";
 
@@ -98,19 +100,74 @@ function MatchDateGroup({ group }: { group: ReturnType<typeof groupMatchesByDate
   );
 }
 
-export default async function MatchesPage() {
+function summarizeSources(matches: Match[]) {
+  const summaries = new Map<string, { sourceName: string; count: number; lastSyncedAt?: string | null }>();
+
+  for (const match of matches) {
+    const sourceName = match.dataSource ?? "unknown";
+    const summary = summaries.get(sourceName) ?? { sourceName, count: 0, lastSyncedAt: null };
+    summary.count += 1;
+    if (match.lastSyncedAt && (!summary.lastSyncedAt || match.lastSyncedAt > summary.lastSyncedAt)) {
+      summary.lastSyncedAt = match.lastSyncedAt;
+    }
+    summaries.set(sourceName, summary);
+  }
+
+  return Array.from(summaries.values()).sort((a, b) => b.count - a.count);
+}
+
+function SourceFilter({
+  summaries,
+  activeSource,
+}: {
+  summaries: ReturnType<typeof summarizeSources>;
+  activeSource: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Link href="/matches" className="rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-muted">
+        自动
+      </Link>
+      <Link
+        href="/matches?source=all"
+        className={`rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-muted ${
+          activeSource === "all" ? "bg-muted" : ""
+        }`}
+      >
+        全部
+      </Link>
+      {summaries.map((summary) => (
+        <Link
+          key={summary.sourceName}
+          href={`/matches?source=${encodeURIComponent(summary.sourceName)}`}
+          className={`rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-muted ${
+            activeSource === summary.sourceName ? "bg-muted" : ""
+          }`}
+        >
+          {summary.sourceName} · {summary.count}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+export default async function MatchesPage({ searchParams }: { searchParams?: Promise<{ source?: string }> }) {
   const syncStatus = await ensureWorldCup2026MatchesFresh();
-  const matches = await listMatches();
+  const allMatches = await listMatches();
+  const sourceSummaries = summarizeSources(allMatches);
+  const hasWorldCup2026Api = sourceSummaries.some((summary) => summary.sourceName === WORLDCUP2026_API_SOURCE_NAME);
+  const requestedSource = (await searchParams)?.source;
+  const activeSource = requestedSource ?? (hasWorldCup2026Api ? WORLDCUP2026_API_SOURCE_NAME : "all");
+  const matches =
+    activeSource === "all"
+      ? allMatches
+      : allMatches.filter((match) => (match.dataSource ?? "unknown") === activeSource);
   const unfinishedMatches = matches.filter((match) => match.status !== "finished");
   const finishedMatches = matches.filter((match) => match.status === "finished");
   const unfinishedGroups = groupMatchesByDate(unfinishedMatches);
   const finishedGroups = groupMatchesByDate(finishedMatches).slice().reverse();
-  const sourceMatches = matches.filter((match) => match.dataSource === WORLDCUP_2026_SOURCE_NAME);
-  const lastSyncedAt = sourceMatches
-    .map((match) => match.lastSyncedAt)
-    .filter(Boolean)
-    .sort()
-    .at(-1);
+  const activeSummary = sourceSummaries.find((summary) => summary.sourceName === activeSource);
+  const lastSyncedAt = activeSummary?.lastSyncedAt;
 
   return (
     <div className="space-y-6">
@@ -137,6 +194,10 @@ export default async function MatchesPage() {
           </span>
         </div>
       </div>
+
+      <MatchSyncPanel summaries={sourceSummaries} visibleSource={activeSource} />
+
+      <SourceFilter summaries={sourceSummaries} activeSource={activeSource} />
 
       {!syncStatus.ok ? (
         <Alert variant="destructive">

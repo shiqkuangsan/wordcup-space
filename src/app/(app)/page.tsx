@@ -1,7 +1,9 @@
 import { BalanceChart } from "@/components/charts/balance-chart";
+import { DailyCommandCenter } from "@/components/dashboard/daily-command-center";
 import { OpenRiskTable } from "@/components/dashboard/open-risk-table";
 import { PortfolioSummary } from "@/components/dashboard/portfolio-summary";
 import { RecentBetsTable } from "@/components/dashboard/recent-bets-table";
+import { ReviewDashboard } from "@/components/dashboard/review-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCny } from "@/domain/money";
 import { getDashboardSummary } from "@/server/queries/dashboard";
@@ -27,6 +29,14 @@ export default async function DashboardPage() {
         <p className="font-mono text-sm text-muted-foreground">Phase 1 MVP</p>
         <h2 className="text-2xl font-semibold tracking-normal">总览 Dashboard</h2>
       </div>
+      <DailyCommandCenter
+        dateKey={summary.commandCenter.dateKey}
+        focusLabel={summary.commandCenter.focusLabel}
+        focusMatches={summary.commandCenter.focusMatches}
+        missingOdds={summary.commandCenter.missingOdds}
+        pendingIntents={summary.commandCenter.pendingIntents}
+        settlementQueue={summary.commandCenter.settlementQueue}
+      />
       <div className="grid gap-4 md:grid-cols-4">
         <PortfolioSummary title="User 余额" balanceCents={user?.allocatedBalanceCents ?? 0} subtitle="你的逻辑账本" />
         <PortfolioSummary title="Codex 余额" balanceCents={codex?.allocatedBalanceCents ?? 0} subtitle="Codex 独立预算池" />
@@ -45,6 +55,7 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
+      <ReviewDashboard byDecision={summary.review.byDecision} byMarket={summary.review.byMarket} />
       <div className="grid gap-4 xl:grid-cols-2">
         <OpenRiskTable slips={summary.openBetSlips} />
         <RecentBetsTable slips={summary.recentBetSlips} />

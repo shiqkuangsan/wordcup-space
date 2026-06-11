@@ -174,6 +174,10 @@ describe("betting lifecycle actions", () => {
     });
 
     expect(codexBalance()).toBe(90000);
+    expect(rowCount(betSlipLegs)).toBe(1);
+    expect(
+      getDb().select().from(betSlipLegs).where(eq(betSlipLegs.betSlipId, slip.id)).get()?.matchId,
+    ).toBe(match.id);
 
     const settlement = await settleBetSlip({
       betSlipId: slip.id,

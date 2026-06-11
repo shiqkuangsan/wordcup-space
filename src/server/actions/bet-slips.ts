@@ -2,7 +2,9 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db/client";
 import {
+  betIntentLegs,
   betIntents,
+  betSlipLegs,
   betSlips,
   executionAttempts,
   portfolioLedgerEntries,
@@ -88,6 +90,32 @@ export async function createBetSlipFromAttempt(
     };
 
     tx.insert(betSlips).values(betSlip).run();
+    const intentLegs = tx
+      .select()
+      .from(betIntentLegs)
+      .where(eq(betIntentLegs.betIntentId, intent.id))
+      .all();
+
+    for (const leg of intentLegs) {
+      tx.insert(betSlipLegs)
+        .values({
+          id: createId("slip-leg"),
+          betSlipId: betSlip.id,
+          matchId: leg.matchId,
+          matchText: leg.matchText,
+          market: leg.market,
+          selection: leg.selection,
+          line: leg.line,
+          finalOdds: data.finalOdds,
+          oddsFormat: data.oddsFormat,
+          rawOdds: data.rawOdds,
+          status: "open",
+          legOrder: leg.legOrder,
+          notes: leg.notes,
+        })
+        .run();
+    }
+
     tx.update(portfolios)
       .set({
         allocatedBalanceCents: nextBalance,
