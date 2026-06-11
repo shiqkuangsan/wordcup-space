@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CodexAnalysisPanel } from "@/components/matches/codex-analysis-panel";
 import { MatchResultForm } from "@/components/matches/match-result-form";
+import { OddsSourceTable } from "@/components/matches/odds-source-table";
 import { OddsEntryForm } from "@/components/matches/odds-entry-form";
 import { getDb } from "@/db/client";
 import {
@@ -41,6 +42,24 @@ function getLatestOddsGroup(odds: OddsSnapshot[]) {
       snapshot.market === latestOdds.market &&
       snapshot.capturedAt === latestOdds.capturedAt,
   );
+}
+
+function getLatestOddsGroupsBySource(odds: OddsSnapshot[]) {
+  const groups = new Map<string, OddsSnapshot[]>();
+
+  for (const snapshot of odds) {
+    const key = `${snapshot.bookmaker}:${snapshot.market}`;
+    const existing = groups.get(key);
+    if (!existing) {
+      groups.set(key, [snapshot]);
+      continue;
+    }
+    if (snapshot.capturedAt === existing[0].capturedAt) {
+      existing.push(snapshot);
+    }
+  }
+
+  return Array.from(groups.values());
 }
 
 function getWorkflowCta(key: ReturnType<typeof getMatchWorkflowStatus>["key"], matchId: string) {
@@ -101,6 +120,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const workflowCta = getWorkflowCta(workflow.key, id);
   const latestOdds = odds[0];
   const latestMarketOdds = getLatestOddsGroup(odds);
+  const latestOddsGroups = getLatestOddsGroupsBySource(odds);
   const latestMarketAnalysis =
     latestMarketOdds.length >= 2
       ? devigMarketProbabilities(
@@ -160,6 +180,15 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           ) : null}
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>来源盘口</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <OddsSourceTable groups={latestOddsGroups} homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

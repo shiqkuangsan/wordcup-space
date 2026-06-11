@@ -1,11 +1,16 @@
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, RefreshCw } from "lucide-react";
+import type { ReactNode } from "react";
+import { CalendarDays, CheckCircle2, Radio, RefreshCw } from "lucide-react";
 import { ListFilterForm } from "@/components/filters/list-filter-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MatchSyncPanel } from "@/components/matches/sync-panel";
+import { MatchesAutoRefresh } from "@/components/matches/matches-auto-refresh";
+import { OddsSourceMiniMatrix } from "@/components/matches/odds-source-table";
+import { MatchSyncDrawer } from "@/components/matches/sync-drawer";
 import { Separator } from "@/components/ui/separator";
+import { getDb } from "@/db/client";
+import { oddsSnapshots } from "@/db/schema";
 import { formatLocalDateLabel, formatLocalMinute, formatLocalTime, localDateKey } from "@/domain/dates";
 import { countActiveFilters, getSearchParam, matchesDateRange, matchesText, type SearchParamsRecord } from "@/domain/list-filters";
 import { formatMatchStage, formatMatchStatus, MATCH_STAGE_OPTIONS, MATCH_STATUS_OPTIONS } from "@/domain/match-sync";
@@ -16,7 +21,10 @@ import { WORLDCUP2026_API_SOURCE_NAME } from "@/server/providers/worldcup2026-ap
 
 export const dynamic = "force-dynamic";
 
+const MATCHES_AUTO_REFRESH_MS = 60_000;
+
 type Match = Awaited<ReturnType<typeof listMatches>>[number];
+type OddsSnapshot = typeof oddsSnapshots.$inferSelect;
 
 function groupMatchesByDate(matches: Match[]) {
   const groups = new Map<string, Match[]>();
@@ -46,7 +54,31 @@ function TeamName({ name }: { name: string }) {
   );
 }
 
-function MatchDateGroup({ group }: { group: ReturnType<typeof groupMatchesByDate>[number] }) {
+function getLatestOddsGroups(odds: OddsSnapshot[]) {
+  const latestByBookmaker = new Map<string, OddsSnapshot[]>();
+
+  for (const snapshot of odds) {
+    const key = `${snapshot.bookmaker}:${snapshot.market}`;
+    const existing = latestByBookmaker.get(key);
+    if (!existing) {
+      latestByBookmaker.set(key, [snapshot]);
+      continue;
+    }
+    if (snapshot.capturedAt === existing[0].capturedAt) {
+      existing.push(snapshot);
+    }
+  }
+
+  return Array.from(latestByBookmaker.values());
+}
+
+function MatchDateGroup({
+  group,
+  oddsByMatch,
+}: {
+  group: ReturnType<typeof groupMatchesByDate>[number];
+  oddsByMatch: Map<string, OddsSnapshot[][]>;
+}) {
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -66,13 +98,18 @@ function MatchDateGroup({ group }: { group: ReturnType<typeof groupMatchesByDate
             <div className="font-mono text-sm tabular-nums text-muted-foreground">
               {formatLocalTime(match.kickoffAt)}
             </div>
-            <div className="min-w-0 space-y-1">
-              <div className="grid min-w-0 gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-                <div className="min-w-0 font-medium">
+            <div className="min-w-0 space-y-2">
+              <div className="grid min-w-0 grid-cols-[74px_minmax(58px,1fr)_48px_minmax(58px,1fr)] items-center gap-2 sm:grid-cols-[84px_minmax(80px,1fr)_56px_minmax(80px,1fr)]">
+                <div className="text-[11px] text-muted-foreground">平台</div>
+                <div className="flex min-w-0 items-center gap-1 font-medium">
+                  <span className="font-mono text-[11px] text-muted-foreground">1</span>
                   <TeamName name={match.homeTeam} />
                 </div>
-                <span className="text-xs uppercase text-muted-foreground sm:text-center">vs</span>
-                <div className="min-w-0 font-medium sm:text-right">
+                <span className="text-center text-xs uppercase text-muted-foreground">
+                  <span className="font-mono">X</span> vs
+                </span>
+                <div className="flex min-w-0 items-center justify-end gap-1 font-medium">
+                  <span className="font-mono text-[11px] text-muted-foreground">2</span>
                   <TeamName name={match.awayTeam} />
                 </div>
               </div>
@@ -91,6 +128,13 @@ function MatchDateGroup({ group }: { group: ReturnType<typeof groupMatchesByDate
                   </>
                 ) : null}
               </div>
+              {(oddsByMatch.get(match.id) ?? []).length ? (
+                <OddsSourceMiniMatrix
+                  groups={oddsByMatch.get(match.id) ?? []}
+                  homeTeam={match.homeTeam}
+                  awayTeam={match.awayTeam}
+                />
+              ) : null}
             </div>
             <div className="flex items-center md:justify-end">
               <Badge variant="outline">{formatMatchStatus(match.status)}</Badge>
@@ -99,6 +143,37 @@ function MatchDateGroup({ group }: { group: ReturnType<typeof groupMatchesByDate
         ))}
       </div>
     </section>
+  );
+}
+
+function MatchStatusSection({
+  title,
+  emptyText,
+  groups,
+  oddsByMatch,
+  icon,
+}: {
+  title: string;
+  emptyText: string;
+  groups: ReturnType<typeof groupMatchesByDate>;
+  oddsByMatch: Map<string, OddsSnapshot[][]>;
+  icon: ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          {icon}
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {groups.map((group) => (
+          <MatchDateGroup key={group.dateKey} group={group} oddsByMatch={oddsByMatch} />
+        ))}
+        {groups.length === 0 ? <p className="text-sm text-muted-foreground">{emptyText}</p> : null}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -154,8 +229,18 @@ function SourceFilter({
 }
 
 export default async function MatchesPage({ searchParams }: { searchParams?: Promise<SearchParamsRecord> }) {
-  const syncStatus = await ensureWorldCup2026ApiMatchesFresh();
+  const syncStatus = await ensureWorldCup2026ApiMatchesFresh(MATCHES_AUTO_REFRESH_MS);
   const allMatches = await listMatches();
+  const allOdds = getDb().select().from(oddsSnapshots).all().sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
+  const oddsRowsByMatch = new Map<string, OddsSnapshot[]>();
+  for (const row of allOdds) {
+    const existing = oddsRowsByMatch.get(row.matchId) ?? [];
+    existing.push(row);
+    oddsRowsByMatch.set(row.matchId, existing);
+  }
+  const oddsByMatch = new Map(
+    Array.from(oddsRowsByMatch.entries()).map(([matchId, odds]) => [matchId, getLatestOddsGroups(odds)]),
+  );
   const sourceSummaries = summarizeSources(allMatches);
   const hasWorldCup2026Api = sourceSummaries.some((summary) => summary.sourceName === WORLDCUP2026_API_SOURCE_NAME);
   const params = await searchParams;
@@ -190,10 +275,14 @@ export default async function MatchesPage({ searchParams }: { searchParams?: Pro
       match.status,
     ]);
   });
-  const unfinishedMatches = filteredMatches.filter((match) => match.status !== "finished");
+  const liveMatches = filteredMatches.filter((match) => match.status === "live");
+  const scheduledMatches = filteredMatches.filter((match) => match.status === "scheduled");
   const finishedMatches = filteredMatches.filter((match) => match.status === "finished");
-  const unfinishedGroups = groupMatchesByDate(unfinishedMatches);
+  const exceptionalMatches = filteredMatches.filter((match) => ["postponed", "cancelled"].includes(match.status));
+  const liveGroups = groupMatchesByDate(liveMatches);
+  const scheduledGroups = groupMatchesByDate(scheduledMatches);
   const finishedGroups = groupMatchesByDate(finishedMatches).slice().reverse();
+  const exceptionalGroups = groupMatchesByDate(exceptionalMatches);
   const activeSummary = sourceSummaries.find((summary) => summary.sourceName === activeSource);
   const lastSyncedAt = activeSummary?.lastSyncedAt;
   const groupOptions = Array.from(new Set(allMatches.map((match) => match.groupName).filter(Boolean)))
@@ -219,8 +308,12 @@ export default async function MatchesPage({ searchParams }: { searchParams?: Pro
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{filteredMatches.length} 场</Badge>
+            <Badge variant="outline">比赛中 {liveMatches.length}</Badge>
+            <Badge variant="outline">未开赛 {scheduledMatches.length}</Badge>
             <Badge variant="outline">已完结 {finishedMatches.length}</Badge>
             <Badge variant="outline">最近同步 {lastSyncedAt ? formatLocalMinute(lastSyncedAt) : "暂无"}</Badge>
+            <MatchesAutoRefresh intervalMs={MATCHES_AUTO_REFRESH_MS} />
+            <MatchSyncDrawer summaries={sourceSummaries} visibleSource={activeSource} />
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -234,8 +327,6 @@ export default async function MatchesPage({ searchParams }: { searchParams?: Pro
           </span>
         </div>
       </div>
-
-      <MatchSyncPanel summaries={sourceSummaries} visibleSource={activeSource} />
 
       <ListFilterForm
         action="/matches"
@@ -290,35 +381,39 @@ export default async function MatchesPage({ searchParams }: { searchParams?: Pro
         </Alert>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="size-5" />
-            未完结赛程
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {unfinishedGroups.map((group) => (
-            <MatchDateGroup key={group.dateKey} group={group} />
-          ))}
-          {unfinishedGroups.length === 0 ? <p className="text-sm text-muted-foreground">暂无未完结比赛。</p> : null}
-        </CardContent>
-      </Card>
+      <MatchStatusSection
+        title="比赛中"
+        emptyText="暂无比赛中。"
+        groups={liveGroups}
+        oddsByMatch={oddsByMatch}
+        icon={<Radio className="size-5" />}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="size-5" />
-            已完结比赛
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {finishedGroups.map((group) => (
-            <MatchDateGroup key={group.dateKey} group={group} />
-          ))}
-          {finishedGroups.length === 0 ? <p className="text-sm text-muted-foreground">暂无已完结比赛。</p> : null}
-        </CardContent>
-      </Card>
+      <MatchStatusSection
+        title="未开赛"
+        emptyText="暂无未开赛比赛。"
+        groups={scheduledGroups}
+        oddsByMatch={oddsByMatch}
+        icon={<CalendarDays className="size-5" />}
+      />
+
+      <MatchStatusSection
+        title="已完结"
+        emptyText="暂无已完结比赛。"
+        groups={finishedGroups}
+        oddsByMatch={oddsByMatch}
+        icon={<CheckCircle2 className="size-5" />}
+      />
+
+      {exceptionalGroups.length > 0 ? (
+        <MatchStatusSection
+          title="延期 / 取消"
+          emptyText="暂无延期或取消比赛。"
+          groups={exceptionalGroups}
+          oddsByMatch={oddsByMatch}
+          icon={<CalendarDays className="size-5" />}
+        />
+      ) : null}
     </div>
   );
 }
