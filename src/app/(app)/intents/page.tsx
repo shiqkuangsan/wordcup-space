@@ -4,6 +4,7 @@ import { IntentCard } from "@/components/intents/intent-card";
 import { IntentForm } from "@/components/intents/intent-form";
 import { getDb } from "@/db/client";
 import { betIntentLegs, betIntents, matches, platformAccounts } from "@/db/schema";
+import { formatMarketLabel } from "@/domain/betting-markets";
 import { formatLocalMinute } from "@/domain/dates";
 import { formatBetModeLabel, formatDecisionByLabel, formatIntentStatus, formatRiskTierLabel } from "@/domain/display-labels";
 import { countActiveFilters, getSearchParam, matchesText, type SearchParamsRecord } from "@/domain/list-filters";
@@ -75,7 +76,7 @@ export default async function IntentsPage({
   });
   const marketOptions = Array.from(new Set(allIntentLegs.map((leg) => leg.market))).sort().map((value) => ({
     value,
-    label: value,
+    label: formatMarketLabel(value),
   }));
   const matchOptions = allMatches.map((match) => ({
     value: match.id,
@@ -162,7 +163,16 @@ export default async function IntentsPage({
           <IntentCard
             key={intent.id}
             intent={intent}
-            legs={allIntentLegs.filter((leg) => leg.betIntentId === intent.id)}
+            legs={[...(legsByIntent.get(intent.id) ?? [])]
+              .sort((a, b) => a.legOrder - b.legOrder)
+              .map((leg) => {
+                const match = leg.matchId ? matchesById.get(leg.matchId) : undefined;
+                return {
+                  ...leg,
+                  matchHref: match ? `/matches/${match.id}` : undefined,
+                  matchTitle: match ? formatMatchTitle(match.homeTeam, match.awayTeam) : (leg.matchText ?? undefined),
+                };
+              })}
             platformAccounts={activePlatformAccounts}
           />
         ))}

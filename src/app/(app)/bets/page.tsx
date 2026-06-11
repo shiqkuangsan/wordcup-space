@@ -6,6 +6,7 @@ import { ReviewEntryPanel } from "@/components/bets/review-entry-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db/client";
 import { betIntents, betSlipLegs, decisionReviews, matches, platformAccounts } from "@/db/schema";
+import { formatMarketLabel } from "@/domain/betting-markets";
 import { formatLocalMinute } from "@/domain/dates";
 import { formatBetModeLabel, formatBetSlipStatus, formatDecisionByLabel } from "@/domain/display-labels";
 import { countActiveFilters, getSearchParam, type SearchParamsRecord } from "@/domain/list-filters";
@@ -40,7 +41,7 @@ export default async function BetsPage({
   const reviews = db.select().from(decisionReviews).orderBy(desc(decisionReviews.createdAt)).all();
   const marketOptions = Array.from(new Set(allSlipLegs.map((leg) => leg.market))).sort().map((value) => ({
     value,
-    label: value,
+    label: formatMarketLabel(value),
   }));
   const matchOptions = allMatches.map((match) => ({
     value: match.id,

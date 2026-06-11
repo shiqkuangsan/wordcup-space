@@ -1,12 +1,17 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IntentExecutionPanel } from "@/components/intents/intent-execution-panel";
+import { formatMarketLabel } from "@/domain/betting-markets";
 import { formatBetModeLabel, formatDecisionByLabel, formatIntentStatus, formatRiskTierLabel } from "@/domain/display-labels";
 import { formatCny } from "@/domain/money";
 import type { betIntentLegs, betIntents, platformAccounts } from "@/db/schema";
 
 type Intent = typeof betIntents.$inferSelect;
-type IntentLeg = typeof betIntentLegs.$inferSelect;
+type IntentLeg = typeof betIntentLegs.$inferSelect & {
+  matchHref?: string;
+  matchTitle?: string;
+};
 type PlatformAccount = typeof platformAccounts.$inferSelect;
 
 export function IntentCard({
@@ -36,10 +41,22 @@ export function IntentCard({
           <div className="space-y-1 rounded-md border bg-muted/30 px-3 py-2 text-sm">
             {legs.map((leg) => (
               <div key={leg.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  {leg.matchText ?? leg.matchId ?? "未绑定比赛"} · {leg.market} · {leg.selection}
-                  {leg.line ? ` ${leg.line}` : ""}
-                </span>
+                <div className="min-w-0">
+                  {leg.matchHref ? (
+                    <Link href={leg.matchHref} className="font-medium underline-offset-4 hover:underline">
+                      {leg.matchTitle ?? "未关联比赛"}
+                    </Link>
+                  ) : (
+                    <span className="font-medium">{leg.matchTitle ?? leg.matchText ?? "未关联比赛"}</span>
+                  )}
+                  <span className="text-muted-foreground">
+                    {" · "}
+                    {formatMarketLabel(leg.market)}
+                    {" · "}
+                    {leg.selection}
+                    {leg.line ? ` ${leg.line}` : ""}
+                  </span>
+                </div>
                 <span className="font-mono text-xs text-muted-foreground">{leg.intendedOdds.toFixed(2)}</span>
               </div>
             ))}

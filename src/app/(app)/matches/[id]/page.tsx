@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CodexAnalysisPanel } from "@/components/matches/codex-analysis-panel";
 import { MatchResultForm } from "@/components/matches/match-result-form";
 import { OddsEntryForm } from "@/components/matches/odds-entry-form";
@@ -208,99 +209,180 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </Link>
       </div>
 
-      <div id="codex-analysis" className="scroll-mt-4">
-        <CodexAnalysisPanel matchId={id} oddsOptions={oddsOptions} />
-      </div>
+      <Tabs defaultValue="analysis" className="space-y-4">
+        <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="analysis">赛前分析</TabsTrigger>
+          <TabsTrigger value="execution">执行记录</TabsTrigger>
+          <TabsTrigger value="postmatch">赛后结算</TabsTrigger>
+        </TabsList>
 
-      <div id="odds-entry" className="scroll-mt-4">
-        <OddsEntryForm matchId={id} />
-      </div>
+        <TabsContent value="analysis" className="space-y-4">
+          <div id="codex-analysis" className="scroll-mt-4">
+            <CodexAnalysisPanel matchId={id} oddsOptions={oddsOptions} />
+          </div>
 
-      <div id="match-result" className="scroll-mt-4">
-        <MatchResultForm matchId={id} latestResult={latestResult} />
-      </div>
+          <div id="odds-entry" className="scroll-mt-4">
+            <OddsEntryForm matchId={id} />
+          </div>
 
-      {hasSettlementCandidates ? (
-        <Card id="settlement-prompt" className="scroll-mt-4">
-          <CardHeader>
-            <CardTitle>待结算提示</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p className="text-muted-foreground">
-              比赛已记录结束，存在 {openSlips.length} 张未结算 slip。系统只提示，不会自动结算或改动资金。
-            </p>
-            <div className="space-y-2">
-              {openSlips.map((slip) => (
-                <div key={slip.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2">
-                  <span className="font-mono text-xs">{slip.id}</span>
-                  <span>
-                    stake {formatCny(slip.stakeCents)} · odds {slip.finalOdds.toFixed(2)} · potential{" "}
-                    {formatCny(slip.potentialReturnCents)}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Link href="/bets" className="inline-flex text-sm font-medium underline underline-offset-4">
-              去注单中心结算
-            </Link>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>赔率快照</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {latestMarketAnalysis ? (
-            <div className="rounded-md border bg-muted/30 p-3 text-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="font-medium">
-                  最近盘口组 · {latestOdds?.bookmaker} · {latestOdds?.market}
-                </div>
-                <div className="font-mono text-xs tabular-nums text-muted-foreground">
-                  overround {(latestMarketAnalysis.overround * 100).toFixed(2)}%
-                </div>
-              </div>
-              <div className="mt-2 grid gap-2 md:grid-cols-3">
-                {latestMarketAnalysis.outcomes.map((outcome) => (
-                  <div key={outcome.id} className="rounded border bg-background px-2 py-1.5">
-                    <div className="truncate font-medium">{outcome.id}</div>
-                    <div className="font-mono text-xs text-muted-foreground">
-                      fair {(outcome.fairProbability * 100).toFixed(1)}% · 公允 {outcome.fairOdds.toFixed(2)}
+          <Card>
+            <CardHeader>
+              <CardTitle>赔率快照</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {latestMarketAnalysis ? (
+                <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="font-medium">
+                      最近盘口组 · {latestOdds?.bookmaker} · {latestOdds?.market}
+                    </div>
+                    <div className="font-mono text-xs tabular-nums text-muted-foreground">
+                      overround {(latestMarketAnalysis.overround * 100).toFixed(2)}%
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-          {odds.slice(0, 8).map((snapshot) => (
-            <div key={snapshot.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
-              <div className="font-medium">
-                {snapshot.bookmaker} · {snapshot.market} · {snapshot.selection}
-                {snapshot.line ? ` ${snapshot.line}` : ""}
-              </div>
-              <div className="font-mono text-xs tabular-nums text-muted-foreground">
-                {snapshot.decimalOdds.toFixed(2)} · implied{" "}
-                {(analyzeOddsSnapshot({ decimalOdds: snapshot.decimalOdds }).impliedProbability * 100).toFixed(1)}% ·{" "}
-                {formatLocalMinute(snapshot.capturedAt)}
-              </div>
-            </div>
-          ))}
-          {odds.length === 0 ? <p className="text-sm text-muted-foreground">暂无赔率快照。</p> : null}
-        </CardContent>
-      </Card>
+                  <div className="mt-2 grid gap-2 md:grid-cols-3">
+                    {latestMarketAnalysis.outcomes.map((outcome) => (
+                      <div key={outcome.id} className="rounded border bg-background px-2 py-1.5">
+                        <div className="truncate font-medium">{outcome.id}</div>
+                        <div className="font-mono text-xs text-muted-foreground">
+                          fair {(outcome.fairProbability * 100).toFixed(1)}% · 公允 {outcome.fairOdds.toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {odds.slice(0, 8).map((snapshot) => (
+                <div key={snapshot.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+                  <div className="font-medium">
+                    {snapshot.bookmaker} · {snapshot.market} · {snapshot.selection}
+                    {snapshot.line ? ` ${snapshot.line}` : ""}
+                  </div>
+                  <div className="font-mono text-xs tabular-nums text-muted-foreground">
+                    {snapshot.decimalOdds.toFixed(2)} · implied{" "}
+                    {(analyzeOddsSnapshot({ decimalOdds: snapshot.decimalOdds }).impliedProbability * 100).toFixed(1)}% ·{" "}
+                    {formatLocalMinute(snapshot.capturedAt)}
+                  </div>
+                </div>
+              ))}
+              {odds.length === 0 ? <p className="text-sm text-muted-foreground">暂无赔率快照。</p> : null}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {settlementRows.length ? (
-        <Card id="settlements" className="scroll-mt-4">
-          <CardHeader>
-            <CardTitle>结算记录</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            {settlementRows.length} 条 settlement 已记录。
-          </CardContent>
-        </Card>
-      ) : null}
+        <TabsContent value="execution" className="grid gap-4 lg:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>决策 intent</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {intents.slice(0, 6).map((intent) => (
+                <Link
+                  key={intent.id}
+                  href={`/intents?matchId=${encodeURIComponent(id)}`}
+                  className="block rounded-md border px-3 py-2 transition-colors hover:border-foreground/40 hover:bg-muted/40"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs">{intent.id}</span>
+                    <Badge variant="outline">{intent.status}</Badge>
+                  </div>
+                  <div className="mt-1 text-muted-foreground">
+                    {intent.decisionBy} · {formatCny(intent.intendedStakeCents)} · {intent.intendedTotalOdds.toFixed(2)}
+                  </div>
+                </Link>
+              ))}
+              {intents.length === 0 ? <p className="text-muted-foreground">暂无 intent。</p> : null}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>执行 attempt</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {attempts.slice(0, 6).map((attempt) => (
+                <div key={attempt.id} className="rounded-md border px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs">{attempt.id}</span>
+                    <Badge variant="outline">{attempt.status}</Badge>
+                  </div>
+                  <div className="mt-1 text-muted-foreground">
+                    intended {attempt.intendedOdds.toFixed(2)}
+                    {attempt.observedOdds ? ` · observed ${attempt.observedOdds.toFixed(2)}` : ""}
+                  </div>
+                </div>
+              ))}
+              {attempts.length === 0 ? <p className="text-muted-foreground">暂无 attempt。</p> : null}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>注单 slip</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {slips.slice(0, 6).map((slip) => (
+                <Link
+                  key={slip.id}
+                  href={`/bets?matchId=${encodeURIComponent(id)}`}
+                  className="block rounded-md border px-3 py-2 transition-colors hover:border-foreground/40 hover:bg-muted/40"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs">{slip.id}</span>
+                    <Badge variant="outline">{slip.status}</Badge>
+                  </div>
+                  <div className="mt-1 text-muted-foreground">
+                    stake {formatCny(slip.stakeCents)} · odds {slip.finalOdds.toFixed(2)}
+                  </div>
+                </Link>
+              ))}
+              {slips.length === 0 ? <p className="text-muted-foreground">暂无 slip。</p> : null}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="postmatch" className="space-y-4">
+          <div id="match-result" className="scroll-mt-4">
+            <MatchResultForm matchId={id} latestResult={latestResult} />
+          </div>
+
+          {hasSettlementCandidates ? (
+            <Card id="settlement-prompt" className="scroll-mt-4">
+              <CardHeader>
+                <CardTitle>待结算提示</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <p className="text-muted-foreground">
+                  比赛已记录结束，存在 {openSlips.length} 张未结算 slip。系统只提示，不会自动结算或改动资金。
+                </p>
+                <div className="space-y-2">
+                  {openSlips.map((slip) => (
+                    <div key={slip.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2">
+                      <span className="font-mono text-xs">{slip.id}</span>
+                      <span>
+                        stake {formatCny(slip.stakeCents)} · odds {slip.finalOdds.toFixed(2)} · potential{" "}
+                        {formatCny(slip.potentialReturnCents)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <Link href="/bets" className="inline-flex text-sm font-medium underline underline-offset-4">
+                  去注单中心结算
+                </Link>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Card id="settlements" className="scroll-mt-4">
+            <CardHeader>
+              <CardTitle>结算记录</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              {settlementRows.length ? `${settlementRows.length} 条 settlement 已记录。` : "暂无 settlement。"}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

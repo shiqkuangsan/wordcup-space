@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MarketBreakdownChart, ProfitLossChart } from "@/components/charts/performance-charts";
+import { ProfitLossChart } from "@/components/charts/performance-charts";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMarketLabel } from "@/domain/betting-markets";
@@ -50,11 +50,13 @@ export function ReviewDashboard({
   byDecision: ReviewSummary[];
   byMarket: MarketBreakdown[];
 }) {
-  const marketChartPoints = byMarket.slice(0, 6).map((row) => ({
-    label: formatMarketLabel(row.market),
-    profitLoss: row.profitLossCents / 100,
-    openExposure: row.openExposureCents / 100,
-  }));
+  const totalOpenExposureCents = byMarket.reduce((sum, row) => sum + row.openExposureCents, 0);
+  const totalProfitLossCents = byMarket.reduce((sum, row) => sum + row.profitLossCents, 0);
+  const topOpenRisk = byMarket
+    .slice()
+    .sort((a, b) => b.openExposureCents - a.openExposureCents)
+    .find((row) => row.openExposureCents > 0);
+  const losingMarkets = byMarket.filter((row) => row.profitLossCents < 0).length;
 
   return (
     <div className="space-y-4">
@@ -74,11 +76,38 @@ export function ReviewDashboard({
 
         <Card>
           <CardHeader>
-            <CardTitle>市场盈亏 / 敞口</CardTitle>
+            <CardTitle>当前风险重点</CardTitle>
           </CardHeader>
-          <CardContent>
-            {marketChartPoints.length ? (
-              <MarketBreakdownChart points={marketChartPoints} />
+          <CardContent className="space-y-4">
+            {byMarket.length ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-md border px-3 py-2">
+                    <div className="text-xs text-muted-foreground">未结算敞口</div>
+                    <div className="mt-1 font-mono text-2xl font-semibold">{formatCny(totalOpenExposureCents)}</div>
+                  </div>
+                  <div className="rounded-md border px-3 py-2">
+                    <div className="text-xs text-muted-foreground">已结算盈亏</div>
+                    <div className="mt-1 font-mono text-2xl font-semibold">{signedCny(totalProfitLossCents)}</div>
+                  </div>
+                </div>
+                <div className="grid gap-2 text-sm">
+                  <div className="flex items-center justify-between gap-3 border-b pb-2">
+                    <span className="text-muted-foreground">最大未结算市场</span>
+                    <span className="text-right font-medium">
+                      {topOpenRisk ? `${formatMarketLabel(topOpenRisk.market)} · ${formatCny(topOpenRisk.openExposureCents)}` : "暂无"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 border-b pb-2">
+                    <span className="text-muted-foreground">亏损市场数</span>
+                    <span className="font-mono">{losingMarkets}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">市场数量</span>
+                    <span className="font-mono">{byMarket.length}</span>
+                  </div>
+                </div>
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">暂无市场维度数据。</p>
             )}
