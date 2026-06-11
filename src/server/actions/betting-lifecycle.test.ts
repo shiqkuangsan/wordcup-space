@@ -355,8 +355,8 @@ describe("betting lifecycle actions", () => {
       finalOdds: 2.01,
       platformAccountId: "betway-main",
       executionMethod: "user_manual",
-      confirmationRef: "534480127048810501",
-      sourceText: "手机截图：RMB 50 单注，下半场，进球最多的半场，墨西哥 vs 南非，赔率 2.01，赢取 100.50。",
+      confirmationRef: "example-ticket-001",
+      sourceText: "示例截图：RMB 50 单注，下半场，进球最多的半场，墨西哥 vs 南非，赔率 2.01，赢取 100.50。",
     };
 
     const preview = await postPlacedBet(jsonRequest("/api/placed-bets", {
