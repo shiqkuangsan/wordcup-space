@@ -1,9 +1,10 @@
 import { desc } from "drizzle-orm";
 import { BetsTable } from "@/components/bets/bets-table";
 import { QuickRecordPanel } from "@/components/bets/quick-record-panel";
+import { ReviewEntryPanel } from "@/components/bets/review-entry-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db/client";
-import { betIntents, matches, platformAccounts } from "@/db/schema";
+import { betIntents, decisionReviews, matches, platformAccounts } from "@/db/schema";
 import { listBetSlips } from "@/server/queries/bets";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function BetsPage({
   const executableIntents = intents.filter((intent) => !["executed", "cancelled", "expired"].includes(intent.status));
   const accounts = db.select().from(platformAccounts).orderBy(desc(platformAccounts.createdAt)).all();
   const allMatches = db.select().from(matches).orderBy(desc(matches.kickoffAt)).all();
+  const reviews = db.select().from(decisionReviews).orderBy(desc(decisionReviews.createdAt)).all();
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
@@ -35,12 +37,15 @@ export default async function BetsPage({
           <CardContent><BetsTable slips={settledSlips} emptyText="暂无已结算注单。" /></CardContent>
         </Card>
       </div>
-      <QuickRecordPanel
-        executableIntents={executableIntents}
-        openSlips={openSlips}
-        platformAccounts={accounts}
-        matches={allMatches}
-      />
+      <div className="space-y-6">
+        <QuickRecordPanel
+          executableIntents={executableIntents}
+          openSlips={openSlips}
+          platformAccounts={accounts}
+          matches={allMatches}
+        />
+        <ReviewEntryPanel settledSlips={settledSlips} reviews={reviews} />
+      </div>
     </div>
   );
 }

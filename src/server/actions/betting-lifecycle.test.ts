@@ -10,8 +10,9 @@ import { POST as postIntent } from "@/app/api/intents/route";
 import { POST as postPlacedBet } from "@/app/api/placed-bets/route";
 import { POST as postSettlement } from "@/app/api/settlements/route";
 import { getDb, resetDbForTests } from "@/db/client";
-import { betIntentLegs, betIntents, betSlipLegs, betSlips, executionAttempts, platformAccounts, portfolioLedgerEntries, portfolios, settlements } from "@/db/schema";
+import { betIntentLegs, betIntents, betSlipLegs, betSlips, decisionReviews, executionAttempts, platformAccounts, portfolioLedgerEntries, portfolios, settlements } from "@/db/schema";
 import { createBetSlipFromAttempt } from "@/server/actions/bet-slips";
+import { recordDecisionReview } from "@/server/actions/decision-reviews";
 import { createExecutionAttempt, markExecutionAttempt } from "@/server/actions/execution-attempts";
 import { createBetIntent, addBetIntentLeg } from "@/server/actions/intents";
 import { createMatch } from "@/server/actions/matches";
@@ -41,10 +42,10 @@ function seedRequiredRows() {
 
   db.insert(platformAccounts)
     .values({
-      id: "bet365-main",
-      name: "Bet365 主账户",
-      provider: "bet365",
-      accountLabel: "bet365-main",
+      id: "betway-main",
+      name: "Betway 主账户",
+      provider: "betway",
+      accountLabel: "betway-main",
       currency: "CNY",
     })
     .run();
@@ -140,7 +141,7 @@ describe("betting lifecycle actions", () => {
     const failedAttempt = await createExecutionAttempt({
       betIntentId: intent.id,
       executionMethod: "user_manual",
-      platformAccountId: "bet365-main",
+      platformAccountId: "betway-main",
       intendedOdds: 2,
       observedOdds: 2,
     });
@@ -155,7 +156,7 @@ describe("betting lifecycle actions", () => {
     const succeededAttempt = await createExecutionAttempt({
       betIntentId: intent.id,
       executionMethod: "user_manual",
-      platformAccountId: "bet365-main",
+      platformAccountId: "betway-main",
       intendedOdds: 2,
       observedOdds: 1.9,
     });
@@ -166,7 +167,7 @@ describe("betting lifecycle actions", () => {
     });
     const slip = await createBetSlipFromAttempt({
       executionAttemptId: succeededAttempt.id,
-      platformAccountId: "bet365-main",
+      platformAccountId: "betway-main",
       stakeCents: 10000,
       finalOdds: 1.9,
       isRealMoney: true,
@@ -187,6 +188,17 @@ describe("betting lifecycle actions", () => {
 
     expect(settlement.payoutCents).toBe(19000);
     expect(codexBalance()).toBe(109000);
+
+    const review = await recordDecisionReview({
+      betSlipId: slip.id,
+      betIntentId: intent.id,
+      reviewer: "user",
+      rating: "good",
+      reviewNote: "盘口判断有效，执行质量正常。",
+    });
+
+    expect(review.betSlipId).toBe(slip.id);
+    expect(rowCount(decisionReviews)).toBe(1);
   });
 
   it("blocks bet slip creation when odds movement reaches tolerance", async () => {
@@ -204,7 +216,7 @@ describe("betting lifecycle actions", () => {
     const attempt = await createExecutionAttempt({
       betIntentId: intent.id,
       executionMethod: "user_manual",
-      platformAccountId: "bet365-main",
+      platformAccountId: "betway-main",
       intendedOdds: 2,
       observedOdds: 1.88,
     });
@@ -217,7 +229,7 @@ describe("betting lifecycle actions", () => {
     await expect(
       createBetSlipFromAttempt({
         executionAttemptId: attempt.id,
-        platformAccountId: "bet365-main",
+        platformAccountId: "betway-main",
         stakeCents: 10000,
         finalOdds: 1.88,
       }),
@@ -266,7 +278,7 @@ describe("betting lifecycle actions", () => {
     const betSlipPreview = await postBetSlip(jsonRequest("/api/bet-slips", {
       dryRun: true,
       betIntentId: intent.id,
-      platformAccountId: "bet365-main",
+      platformAccountId: "betway-main",
       stake: 10,
       finalOdds: 1.9,
       observedOdds: 1.9,
@@ -284,14 +296,14 @@ describe("betting lifecycle actions", () => {
     const attempt = await createExecutionAttempt({
       betIntentId: intent.id,
       executionMethod: "user_manual",
-      platformAccountId: "bet365-main",
+      platformAccountId: "betway-main",
       intendedOdds: 1.9,
       observedOdds: 1.9,
     });
     await markExecutionAttempt({ id: attempt.id, status: "succeeded", observedOdds: 1.9 });
     const slip = await createBetSlipFromAttempt({
       executionAttemptId: attempt.id,
-      platformAccountId: "bet365-main",
+      platformAccountId: "betway-main",
       stakeCents: 1000,
       finalOdds: 1.9,
       confirmationRef: "real-ticket-before-settlement-preview",
@@ -341,7 +353,7 @@ describe("betting lifecycle actions", () => {
       selection: "下半场",
       stake: 50,
       finalOdds: 2.01,
-      platformAccountId: "bet365-main",
+      platformAccountId: "betway-main",
       executionMethod: "user_manual",
       confirmationRef: "534480127048810501",
       sourceText: "手机截图：RMB 50 单注，下半场，进球最多的半场，墨西哥 vs 南非，赔率 2.01，赢取 100.50。",
@@ -391,7 +403,7 @@ describe("betting lifecycle actions", () => {
       stake: 50,
       finalOdds: 1.01,
       oddsFormat: "hong_kong",
-      platformAccountId: "bet365-main",
+      platformAccountId: "betway-main",
       executionMethod: "user_manual",
       confirmationRef: "hk-text-match-ticket",
       sourceText: "非世界杯比赛文本记录，港盘 1.01。",

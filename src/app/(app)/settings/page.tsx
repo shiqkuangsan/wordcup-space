@@ -6,6 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDb } from "@/db/client";
 import { appSettings, platformAccounts, riskProfiles } from "@/db/schema";
+import {
+  DEFAULT_PLATFORM_ACCOUNT_ID,
+  DEFAULT_PLATFORM_ACCOUNT_LABEL,
+  DEFAULT_PLATFORM_ACCOUNT_NAME,
+  DEFAULT_PLATFORM_PROVIDER,
+} from "@/domain/platform-defaults";
 import { updateAppSetting, updateRiskProfile, upsertPlatformAccount } from "@/server/actions/settings";
 
 export const dynamic = "force-dynamic";
@@ -77,16 +83,16 @@ export default async function SettingsPage() {
         <CardContent>
           <form action={platformAction} className="mb-4 grid gap-3 md:grid-cols-3">
             <Field label="账户 ID">
-              <Input name="id" defaultValue="bet365-main" placeholder="例如 bet365-main" required />
+              <Input name="id" defaultValue={DEFAULT_PLATFORM_ACCOUNT_ID} placeholder="例如 betway-main" required />
             </Field>
             <Field label="展示名称">
-              <Input name="name" defaultValue="Bet365 主账户" placeholder="例如 Bet365 主账户" required />
+              <Input name="name" defaultValue={DEFAULT_PLATFORM_ACCOUNT_NAME} placeholder="例如 Betway 主账户" required />
             </Field>
             <Field label="平台">
-              <Input name="provider" defaultValue="bet365" placeholder="例如 bet365" required />
+              <Input name="provider" defaultValue={DEFAULT_PLATFORM_PROVIDER} placeholder="例如 betway" required />
             </Field>
             <Field label="平台账号标签">
-              <Input name="accountLabel" defaultValue="bet365-main" placeholder="例如 bet365-main" required />
+              <Input name="accountLabel" defaultValue={DEFAULT_PLATFORM_ACCOUNT_LABEL} placeholder="例如 betway-main" required />
             </Field>
             <Field label="币种">
               <Input name="currency" defaultValue="CNY" placeholder="CNY" required />

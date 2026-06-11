@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BET_PERIOD_OPTIONS, MARKET_TYPE_OPTIONS } from "@/domain/betting-markets";
 import { formatBetModeLabel, formatBetSlipStatus, formatDecisionByLabel } from "@/domain/display-labels";
 import { formatCny } from "@/domain/money";
+import { getDefaultPlatformAccountId } from "@/domain/platform-defaults";
 import { SETTLEMENT_RESULT_OPTIONS } from "@/domain/settlement";
 import { formatMatchTitle } from "@/domain/team-names";
 import type { betIntents, betSlips, matches, platformAccounts } from "@/db/schema";
@@ -154,7 +155,7 @@ export function QuickRecordPanel({ executableIntents, openSlips, platformAccount
   const defaultSlipId = openSlips[0]?.id ?? "";
 
   const platformOptions = useMemo(() => platformAccounts.filter((account) => account.isActive), [platformAccounts]);
-  const defaultPlatformId = platformOptions[0]?.id ?? "";
+  const defaultPlatformId = getDefaultPlatformAccountId(platformOptions);
 
   function buildMarket(formData: FormData) {
     return `${String(formData.get("period") || "full_time")}:${String(formData.get("marketType") || "moneyline")}`;

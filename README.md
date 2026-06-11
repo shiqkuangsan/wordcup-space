@@ -28,7 +28,7 @@
 - 评估 `rezarahiminia/worldcup2026` 作为 104 场赛程、场馆、球队、比分和积分榜补充源。
 - 把 `machina-sports/sports-skills` 作为 Codex/agent 工作流工具，不作为 app 运行时依赖。
 - 如果有 API key，用 API-Football 或类似服务补充赛程、积分、伤停、首发、技术统计。
-- 赔率来源优先用你提供的 Bet365/Betway 截图或文本，也可以评估 The Odds API，必要时再用浏览器辅助采集。
+- 赔率来源默认用你提供的 Betway 截图或文本，也可以评估 The Odds API，必要时再用浏览器辅助采集。
 
 ## 操作规则
 

@@ -29,7 +29,7 @@ Codex 在创建 `bet_intent` 前必须先形成这个结构：
       "name": "local odds snapshot",
       "url": null,
       "capturedAt": "2026-06-10T12:00:00.000Z",
-      "note": "Bet365 screenshot provided by user"
+      "note": "Betway screenshot provided by user"
     }
   ],
   "dataQuality": "low",

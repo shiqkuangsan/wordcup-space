@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,13 +41,40 @@ type PreviewResult = {
   intentPreview: {
     writes: boolean;
     intent: {
+      portfolioId: string;
+      decisionBy: string;
+      mode: string;
+      market?: string;
       intendedStakeCents: number;
       intendedTotalOdds: number;
+      riskTier: string;
+      confidence: string;
+      modelProbability?: number;
+      expectedValue?: number;
       status: string;
       approvalMode: string;
+      rationale: string;
+      expiresAt?: string;
     };
+    legs: Array<{
+      matchId: string;
+      market: string;
+      selection: string;
+      line?: string;
+      intendedOdds: number;
+      legOrder?: number;
+      notes?: string;
+    }>;
   };
   warnings: string[];
+};
+
+type CreatedIntent = {
+  intent: {
+    id: string;
+    status: string;
+  };
+  legs: Array<{ id: string }>;
 };
 
 function pct(value: number) {
@@ -66,9 +94,12 @@ export function CodexAnalysisPanel({
   matchId: string;
   oddsOptions: OddsOption[];
 }) {
+  const router = useRouter();
   const [result, setResult] = useState<PreviewResult | null>(null);
+  const [createdIntent, setCreatedIntent] = useState<CreatedIntent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const defaultOddsId = oddsOptions[0]?.id ?? "";
   const selectedOptions = useMemo(() => oddsOptions.slice(0, 24), [oddsOptions]);
 
@@ -76,6 +107,7 @@ export function CodexAnalysisPanel({
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setCreatedIntent(null);
 
     const formData = new FormData(event.currentTarget);
     const modelProbabilityPct = Number(formData.get("modelProbabilityPct"));
@@ -103,6 +135,32 @@ export function CodexAnalysisPanel({
       setError(previewError instanceof Error ? previewError.message : String(previewError));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function createIntentFromPreview() {
+    if (!result) return;
+
+    setCreating(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/intents", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ...result.intentPreview.intent,
+          legs: result.intentPreview.legs,
+        }),
+      });
+      const payload = await response.json();
+      if (!payload.ok) throw new Error(payload.error || "Create intent failed");
+      setCreatedIntent(payload.data);
+      router.refresh();
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : String(createError));
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -183,6 +241,16 @@ export function CodexAnalysisPanel({
             <div className="text-xs text-muted-foreground">
               预览 stake ¥{(result.analysis.stakeCents / 100).toFixed(2)}，状态 {result.intentPreview.intent.status}，
               approval {result.intentPreview.intent.approvalMode}。
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" onClick={createIntentFromPreview} disabled={creating || createdIntent !== null}>
+                {creating ? "创建中..." : "确认创建 intent"}
+              </Button>
+              {createdIntent ? (
+                <div className="text-xs text-muted-foreground">
+                  已创建 intent <span className="font-mono">{createdIntent.intent.id}</span>，legs {createdIntent.legs.length}。
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}

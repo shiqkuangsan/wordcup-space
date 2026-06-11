@@ -109,7 +109,7 @@ Codex 分析输出契约参见 [docs/codex-analysis-contract.md](/Users/zhuguido
   "stake": 50,
   "finalOdds": 2.01,
   "oddsFormat": "decimal",
-  "platformAccountId": "bet365-main",
+  "platformAccountId": "betway-main",
   "executionMethod": "user_manual",
   "confirmationRef": "534480127048810501",
   "sourceText": "手机截图：RMB 50 单注，下半场，进球最多的半场，墨西哥 vs 南非，赔率 2.01，赢取 100.50。"
@@ -129,7 +129,7 @@ Codex 分析输出契约参见 [docs/codex-analysis-contract.md](/Users/zhuguido
   "stake": 50,
   "finalOdds": 1.01,
   "oddsFormat": "hong_kong",
-  "platformAccountId": "bet365-main",
+  "platformAccountId": "betway-main",
   "confirmationRef": "ticket_xxx"
 }
 ```
@@ -155,7 +155,7 @@ Codex 分析输出契约参见 [docs/codex-analysis-contract.md](/Users/zhuguido
 {
   "dryRun": true,
   "betIntentId": "intent_xxx",
-  "platformAccountId": "bet365-main",
+  "platformAccountId": "betway-main",
   "executionMethod": "user_manual",
   "stake": 10,
   "finalOdds": 1.9,

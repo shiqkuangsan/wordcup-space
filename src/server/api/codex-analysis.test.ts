@@ -56,7 +56,7 @@ async function seedMatchWithOdds() {
 
   await addOddsSnapshot({
     matchId: match.id,
-    bookmaker: "bet365",
+    bookmaker: "betway",
     market: "full_time:moneyline",
     selection: "Mexico",
     decimalOdds: 2,
@@ -68,7 +68,7 @@ async function seedMatchWithOdds() {
   });
   await addOddsSnapshot({
     matchId: match.id,
-    bookmaker: "bet365",
+    bookmaker: "betway",
     market: "full_time:moneyline",
     selection: "Draw",
     decimalOdds: 3.5,
@@ -80,7 +80,7 @@ async function seedMatchWithOdds() {
   });
   await addOddsSnapshot({
     matchId: match.id,
-    bookmaker: "bet365",
+    bookmaker: "betway",
     market: "full_time:moneyline",
     selection: "Canada",
     decimalOdds: 4,
@@ -125,6 +125,7 @@ describe("Codex analysis preview", () => {
     expect(preview.analysis.marketFairProbability).toBeCloseTo(0.482758, 5);
     expect(preview.analysis.expectedValue).toBeCloseTo(0.1, 6);
     expect(preview.intentPreview.writes).toBe(false);
+    expect(preview.intentPreview.intent.status).toBe("proposed");
     expect(preview.intentPreview.intent.intendedStakeCents).toBe(1000);
     expect(preview.intentPreview.legs[0].matchId).toBe(match.id);
     expect(rowCount(betIntents)).toBe(0);
@@ -147,6 +148,7 @@ describe("Codex analysis preview", () => {
     expect(json.ok).toBe(true);
     expect(json.data.writes).toBe(false);
     expect(json.data.analysis.recommendation).toBe("wait");
+    expect(json.data.intentPreview.intent.status).toBe("draft");
     expect(json.data.analysis.modelProbability).toBeUndefined();
     expect(json.data.warnings).toContain("缺少 Codex 模型概率，只生成观察草稿，不建议直接执行。");
     expect(rowCount(betIntents)).toBe(0);

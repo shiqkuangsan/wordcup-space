@@ -13,6 +13,12 @@ import {
   DEFAULT_CURRENCY,
   DEFAULT_ODDS_TOLERANCE,
 } from "@/domain/constants";
+import {
+  DEFAULT_PLATFORM_ACCOUNT_ID,
+  DEFAULT_PLATFORM_ACCOUNT_LABEL,
+  DEFAULT_PLATFORM_ACCOUNT_NAME,
+  DEFAULT_PLATFORM_PROVIDER,
+} from "@/domain/platform-defaults";
 
 const db = getDb();
 
@@ -23,10 +29,10 @@ function id(prefix: string) {
 async function upsertDefaults() {
   db.insert(platformAccounts)
     .values({
-      id: "bet365-main",
-      name: "Bet365 主账户",
-      provider: "bet365",
-      accountLabel: "bet365-main",
+      id: DEFAULT_PLATFORM_ACCOUNT_ID,
+      name: DEFAULT_PLATFORM_ACCOUNT_NAME,
+      provider: DEFAULT_PLATFORM_PROVIDER,
+      accountLabel: DEFAULT_PLATFORM_ACCOUNT_LABEL,
       currency: DEFAULT_CURRENCY,
       notes: "真实平台账户，可同时承载 User 和 Codex 逻辑账本。",
     })

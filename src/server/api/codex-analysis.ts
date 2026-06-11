@@ -171,8 +171,8 @@ export function buildCodexAnalysisPreview(input: CodexAnalysisPreviewInput) {
     confidence,
     modelProbability,
     expectedValue,
-    status: "draft",
     approvalMode: recommendation === "bet" ? "manual" : "auto",
+    status: recommendation === "bet" ? "proposed" : "draft",
     rationale: rationaleParts.join("；"),
     legs: [
       {

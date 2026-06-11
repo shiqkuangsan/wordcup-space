@@ -257,7 +257,7 @@ flowchart TD
 
 | 阶段 | 主要输入 | 写入表 | 资金影响 |
 |---|---|---|---|
-| 赛程同步 | FIFA / OpenFootball / worldcup2026 provider | `matches`、`match_results` | 无 |
+| 赛程同步 | FIFA / OpenFootball / worldcup2026 provider | `matches` | 无 |
 | 赔率快照 | 用户文本、截图、浏览器采集 | `odds_snapshots` | 无 |
 | Codex 分析 | 本地比赛、赔率、资金、provider、sports-skills | 不写库；先返回 analysis JSON 和 dryRun 预览 | 无 |
 | 决策确认 | 比赛、盘口、概率、理由、风控、用户确认 | `bet_intents`、`bet_intent_legs` | 无 |

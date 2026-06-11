@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DEFAULT_PLATFORM_PROVIDER } from "@/domain/platform-defaults";
 import { addOddsSnapshot } from "@/server/actions/odds";
 
 export function OddsEntryForm({ matchId }: { matchId: string }) {
@@ -30,7 +31,7 @@ export function OddsEntryForm({ matchId }: { matchId: string }) {
       </CardHeader>
       <CardContent>
         <form action={action} className="grid gap-3 md:grid-cols-2">
-          <Input name="bookmaker" placeholder="bookmaker，例如 bet365" required />
+          <Input name="bookmaker" defaultValue={DEFAULT_PLATFORM_PROVIDER} placeholder="bookmaker，例如 betway" required />
           <Input name="market" placeholder="市场，例如 1X2" required />
           <Input name="selection" placeholder="选择，例如 阿根廷胜 / 日本 +0.5" required />
           <Input name="line" placeholder="盘口线，可空" />

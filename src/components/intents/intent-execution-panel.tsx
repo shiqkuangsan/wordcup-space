@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCny } from "@/domain/money";
+import { getDefaultPlatformAccountId } from "@/domain/platform-defaults";
 import type { betIntents, platformAccounts } from "@/db/schema";
 
 type Intent = typeof betIntents.$inferSelect;
@@ -57,6 +58,7 @@ export function IntentExecutionPanel({
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"preview" | "create" | null>(null);
   const hasAccounts = platformAccounts.length > 0;
+  const defaultPlatformId = getDefaultPlatformAccountId(platformAccounts);
   const isExecutable = !["executed", "cancelled", "expired"].includes(intent.status);
 
   function payloadFromForm(form: HTMLFormElement, dryRun: boolean) {
@@ -136,6 +138,7 @@ export function IntentExecutionPanel({
       <form onSubmit={onPreview} className="grid gap-3 md:grid-cols-2">
         <select
           name="platformAccountId"
+          defaultValue={defaultPlatformId}
           disabled={!hasAccounts}
           className="h-9 rounded-md border bg-background px-3 text-sm"
         >

@@ -10,7 +10,7 @@
 | `decision_by` | 这笔判断/下注是谁决策的：`user` 或 `codex`。 |
 | `placed_by` | 谁实际执行下单；当前默认是 `user`。 |
 | `portfolio_id` | 资金归属账本：`user` 或 `codex`；无资金含义的数据可留空。 |
-| `platform_account` | 实际投注平台账户，例如 `bet365-main`；无实际平台时可留空。 |
+| `platform_account` | 实际投注平台账户，例如 `betway-main`；无实际平台时可留空。 |
 | `is_real_money` | 是否真实资金：`true` 或 `false`。 |
 | `source_actor` | 原始信息来自谁：用户、Codex、provider、浏览器采集等。 |
 | `source_type` | 来源类型：`manual`、`browser_capture`、`api`、`model`、`settlement`。 |
@@ -27,7 +27,7 @@ Path: `data/manual/odds-snapshots.csv`
 | `snapshot_id` | 稳定 id，例如 `odds-20260609-001`。 |
 | `captured_at` | 带时区的 ISO 时间戳。 |
 | `match_id` | 稳定比赛 id。 |
-| `bookmaker` | Bet365、Betway、The Odds API 等。 |
+| `bookmaker` | Betway、The Odds API 等。 |
 | `created_by` | 谁录入或采集这条赔率：`user`、`codex`、`importer`。 |
 | `source_actor` | 赔率来源归属，例如 `user` 提供截图，或 `api` 返回数据。 |
 | `market` | `1X2`、`spread`、`total`、`both_teams_score` 等。 |
@@ -48,7 +48,7 @@ Path: `data/bankroll/positions.csv`
 | `portfolio_id` | 归属资金账本：`user` 或 `codex`。 |
 | `decision_by` | 谁做出这笔下注决策：`user` 或 `codex`。 |
 | `placed_by` | 谁实际执行下单；当前默认 `user`。 |
-| `platform_account` | 实际投注平台账户，例如 `bet365-main`。 |
+| `platform_account` | 实际投注平台账户，例如 `betway-main`。 |
 | `is_real_money` | 是否真实资金。Codex 决策也可能是 `true`，表示你代 Codex 用真实额度执行。 |
 | `mode` | `support`、`autonomous`、`parlay` 或 `pass`。 |
 | `match_id` | 比赛 id；串关时可记录多个 leg。 |
