@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CodexAnalysisPanel } from "@/components/matches/codex-analysis-panel";
@@ -41,6 +42,23 @@ function getLatestOddsGroup(odds: OddsSnapshot[]) {
   );
 }
 
+function getWorkflowCta(key: ReturnType<typeof getMatchWorkflowStatus>["key"], matchId: string) {
+  switch (key) {
+    case "needs_odds":
+      return { label: "去录盘口", href: "#odds-entry" };
+    case "needs_analysis":
+      return { label: "生成 dry-run", href: "#codex-analysis" };
+    case "needs_execution":
+      return { label: "去决策队列", href: `/intents?matchId=${encodeURIComponent(matchId)}` };
+    case "waiting_result":
+      return { label: "记录赛果", href: "#match-result" };
+    case "needs_settlement":
+      return { label: "去结算", href: `/bets?matchId=${encodeURIComponent(matchId)}` };
+    case "needs_review":
+      return { label: "看结算记录", href: "#settlements" };
+  }
+}
+
 export default async function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDb();
@@ -73,11 +91,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const hasSettlementCandidates = openSlips.length > 0 && (match.status === "finished" || latestResult?.resultStatus === "finished");
   const workflow = getMatchWorkflowStatus({
     matchStatus: match.status,
+    resultStatus: latestResult?.resultStatus,
     oddsCount: odds.length,
     intentCount: intents.length,
     slipCount: slips.length,
     openSlipCount: openSlips.length,
   });
+  const workflowCta = getWorkflowCta(workflow.key, id);
   const latestOdds = odds[0];
   const latestMarketOdds = getLatestOddsGroup(odds);
   const latestMarketAnalysis =
@@ -145,11 +165,16 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           <CardTitle>下一步</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+          <div className="max-w-2xl">
             <div className="font-medium">{workflow.nextAction}</div>
             <p className="text-sm text-muted-foreground">{workflow.description}</p>
           </div>
-          <Badge>{workflow.label}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge>{workflow.label}</Badge>
+            <Button asChild>
+              <Link href={workflowCta.href}>{workflowCta.label}</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -183,14 +208,20 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </Link>
       </div>
 
-      <CodexAnalysisPanel matchId={id} oddsOptions={oddsOptions} />
+      <div id="codex-analysis" className="scroll-mt-4">
+        <CodexAnalysisPanel matchId={id} oddsOptions={oddsOptions} />
+      </div>
 
-      <OddsEntryForm matchId={id} />
+      <div id="odds-entry" className="scroll-mt-4">
+        <OddsEntryForm matchId={id} />
+      </div>
 
-      <MatchResultForm matchId={id} latestResult={latestResult} />
+      <div id="match-result" className="scroll-mt-4">
+        <MatchResultForm matchId={id} latestResult={latestResult} />
+      </div>
 
       {hasSettlementCandidates ? (
-        <Card>
+        <Card id="settlement-prompt" className="scroll-mt-4">
           <CardHeader>
             <CardTitle>待结算提示</CardTitle>
           </CardHeader>
@@ -261,7 +292,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       </Card>
 
       {settlementRows.length ? (
-        <Card>
+        <Card id="settlements" className="scroll-mt-4">
           <CardHeader>
             <CardTitle>结算记录</CardTitle>
           </CardHeader>
