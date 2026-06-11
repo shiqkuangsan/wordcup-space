@@ -1,9 +1,21 @@
 import { desc } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { betSlipLegs, betSlips, matches } from "@/db/schema";
+import { matchesText } from "@/domain/list-filters";
 import { formatMatchTitle } from "@/domain/team-names";
 
-export async function listBetSlips(filters: { matchId?: string } = {}) {
+export type ListBetSlipFilters = {
+  matchId?: string;
+  status?: string;
+  portfolioId?: string;
+  decisionBy?: string;
+  mode?: string;
+  isRealMoney?: string;
+  market?: string;
+  q?: string;
+};
+
+export async function listBetSlips(filters: ListBetSlipFilters = {}) {
   const db = getDb();
   const slips = db.select().from(betSlips).orderBy(desc(betSlips.createdAt)).all();
   const legs = db.select().from(betSlipLegs).all();
@@ -38,7 +50,40 @@ export async function listBetSlips(filters: { matchId?: string } = {}) {
       selectionSummary: selectionSummary || "未记录选择",
     };
   }).filter((slip) => {
-    if (!filters.matchId) return true;
-    return (legsBySlip.get(slip.id) ?? []).some((leg) => leg.matchId === filters.matchId);
+    const slipLegs = legsBySlip.get(slip.id) ?? [];
+    if (filters.matchId && !slipLegs.some((leg) => leg.matchId === filters.matchId)) return false;
+    if (filters.status === "settled" && slip.status === "open") return false;
+    if (filters.status && filters.status !== "settled" && slip.status !== filters.status) return false;
+    if (filters.portfolioId && slip.portfolioId !== filters.portfolioId) return false;
+    if (filters.decisionBy && slip.decisionBy !== filters.decisionBy) return false;
+    if (filters.mode && slip.mode !== filters.mode) return false;
+    if (filters.isRealMoney === "true" && !slip.isRealMoney) return false;
+    if (filters.isRealMoney === "false" && slip.isRealMoney) return false;
+    if (filters.market && !slipLegs.some((leg) => leg.market === filters.market)) return false;
+    if (!matchesText(filters.q ?? "", [
+      slip.id,
+      slip.confirmationRef,
+      slip.matchSummary,
+      slip.selectionSummary,
+      slip.status,
+      slip.portfolioId,
+      slip.decisionBy,
+      slip.mode,
+      ...slipLegs.flatMap((leg) => {
+        const match = leg.matchId ? matchesById.get(leg.matchId) : undefined;
+        return [
+          leg.market,
+          leg.selection,
+          leg.line,
+          leg.notes,
+          leg.matchId,
+          leg.matchText,
+          match?.homeTeam,
+          match?.awayTeam,
+          match ? formatMatchTitle(match.homeTeam, match.awayTeam) : undefined,
+        ];
+      }),
+    ])) return false;
+    return true;
   });
 }

@@ -12,11 +12,11 @@ export const dynamic = "force-dynamic";
 export default async function BetsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ matchId?: string }>;
+  searchParams: Promise<{ matchId?: string; market?: string }>;
 }) {
-  const { matchId } = await searchParams;
+  const { matchId, market } = await searchParams;
   const db = getDb();
-  const slips = await listBetSlips({ matchId });
+  const slips = await listBetSlips({ matchId, market });
   const openSlips = slips.filter((slip) => slip.status === "open");
   const settledSlips = slips.filter((slip) => slip.status !== "open");
   const intents = db.select().from(betIntents).orderBy(desc(betIntents.createdAt)).all();

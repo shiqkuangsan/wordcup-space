@@ -23,5 +23,13 @@ export const MARKET_TYPE_OPTIONS: Array<{ value: MarketType; label: string; need
 ];
 
 export function formatMarketLabel(market: string) {
-  return MARKET_TYPE_OPTIONS.find((option) => option.value === market)?.label ?? market;
+  const [period, marketType] = market.split(":");
+  const marketLabel = MARKET_TYPE_OPTIONS.find((option) => option.value === marketType || option.value === market)?.label;
+
+  if (marketLabel && period && marketType) {
+    const periodLabel = BET_PERIOD_OPTIONS.find((option) => option.value === period)?.label ?? period;
+    return `${periodLabel}：${marketLabel}`;
+  }
+
+  return marketLabel ?? market;
 }

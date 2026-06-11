@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDecisionByLabel } from "@/domain/display-labels";
+import { formatMarketLabel } from "@/domain/betting-markets";
 import { formatCny } from "@/domain/money";
 import type { ReviewSummary } from "@/domain/review-metrics";
 
@@ -40,14 +42,14 @@ export function ReviewDashboard({
               <table className="w-full text-sm">
                 <thead className="text-left text-xs text-muted-foreground">
                   <tr>
-                    <th className="py-2 pr-3 font-medium">Actor</th>
-                    <th className="py-2 pr-3 font-medium">Settled</th>
-                    <th className="py-2 pr-3 font-medium">Hit</th>
+                    <th className="py-2 pr-3 font-medium">决策来源</th>
+                    <th className="py-2 pr-3 font-medium">已结算</th>
+                    <th className="py-2 pr-3 font-medium">命中率</th>
                     <th className="py-2 pr-3 font-medium">ROI</th>
-                    <th className="py-2 pr-3 font-medium">P/L</th>
-                    <th className="py-2 pr-3 font-medium">Avg odds</th>
-                    <th className="py-2 pr-3 font-medium">Open risk</th>
-                    <th className="py-2 font-medium">Drift</th>
+                    <th className="py-2 pr-3 font-medium">盈亏</th>
+                    <th className="py-2 pr-3 font-medium">平均赔率</th>
+                    <th className="py-2 pr-3 font-medium">未结算敞口</th>
+                    <th className="py-2 font-medium">赔率偏移</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -80,17 +82,21 @@ export function ReviewDashboard({
         </CardHeader>
         <CardContent className="space-y-2">
           {byMarket.slice(0, 6).map((row) => (
-            <div key={row.market} className="rounded-md border px-3 py-2 text-sm">
+            <Link
+              key={row.market}
+              href={`/bets?market=${encodeURIComponent(row.market)}`}
+              className="block rounded-md border px-3 py-2 text-sm transition-colors hover:border-foreground/40 hover:bg-muted/40"
+            >
               <div className="flex items-center justify-between gap-2">
-                <span className="font-medium">{row.market}</span>
-                <span className="font-mono text-xs text-muted-foreground">{row.slipCount} slips</span>
+                <span className="font-medium">{formatMarketLabel(row.market)}</span>
+                <span className="font-mono text-xs text-muted-foreground">{row.slipCount} 张注单</span>
               </div>
               <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                <span>open {formatCny(row.openExposureCents)}</span>
-                <span>settled stake {formatCny(row.settledStakeCents)}</span>
-                <span>P/L {signedCny(row.profitLossCents)}</span>
+                <span>未结算 {formatCny(row.openExposureCents)}</span>
+                <span>已结算本金 {formatCny(row.settledStakeCents)}</span>
+                <span>盈亏 {signedCny(row.profitLossCents)}</span>
               </div>
-            </div>
+            </Link>
           ))}
           {byMarket.length === 0 ? <p className="text-sm text-muted-foreground">暂无市场维度数据。</p> : null}
         </CardContent>

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { CalendarDays, CheckCircle2, RefreshCw } from "lucide-react";
+import { ListFilterForm } from "@/components/filters/list-filter-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatchSyncPanel } from "@/components/matches/sync-panel";
 import { Separator } from "@/components/ui/separator";
 import { formatLocalDateLabel, formatLocalMinute, formatLocalTime, localDateKey } from "@/domain/dates";
-import { formatMatchStage, formatMatchStatus } from "@/domain/match-sync";
+import { countActiveFilters, getSearchParam, matchesDateRange, matchesText, type SearchParamsRecord } from "@/domain/list-filters";
+import { formatMatchStage, formatMatchStatus, MATCH_STAGE_OPTIONS, MATCH_STATUS_OPTIONS } from "@/domain/match-sync";
 import { formatTeamName, getTeamFlag } from "@/domain/team-names";
 import { listMatches } from "@/server/queries/matches";
 import { ensureWorldCup2026MatchesFresh } from "@/server/actions/worldcup-sync";
@@ -151,23 +153,61 @@ function SourceFilter({
   );
 }
 
-export default async function MatchesPage({ searchParams }: { searchParams?: Promise<{ source?: string }> }) {
+export default async function MatchesPage({ searchParams }: { searchParams?: Promise<SearchParamsRecord> }) {
   const syncStatus = await ensureWorldCup2026MatchesFresh();
   const allMatches = await listMatches();
   const sourceSummaries = summarizeSources(allMatches);
   const hasWorldCup2026Api = sourceSummaries.some((summary) => summary.sourceName === WORLDCUP2026_API_SOURCE_NAME);
-  const requestedSource = (await searchParams)?.source;
-  const activeSource = requestedSource ?? (hasWorldCup2026Api ? WORLDCUP2026_API_SOURCE_NAME : "all");
+  const params = await searchParams;
+  const requestedSource = getSearchParam(params, "source");
+  const status = getSearchParam(params, "status");
+  const stage = getSearchParam(params, "stage");
+  const group = getSearchParam(params, "group");
+  const dateFrom = getSearchParam(params, "dateFrom");
+  const dateTo = getSearchParam(params, "dateTo");
+  const q = getSearchParam(params, "q");
+  const activeSource = requestedSource || (hasWorldCup2026Api ? WORLDCUP2026_API_SOURCE_NAME : "all");
   const matches =
     activeSource === "all"
       ? allMatches
       : allMatches.filter((match) => (match.dataSource ?? "unknown") === activeSource);
-  const unfinishedMatches = matches.filter((match) => match.status !== "finished");
-  const finishedMatches = matches.filter((match) => match.status === "finished");
+  const filteredMatches = matches.filter((match) => {
+    if (status && match.status !== status) return false;
+    if (stage && match.stage !== stage) return false;
+    if (group && match.groupName !== group) return false;
+    if (!matchesDateRange(match.kickoffAt, dateFrom, dateTo)) return false;
+    return matchesText(q, [
+      match.id,
+      match.externalId,
+      match.matchNumber,
+      match.homeTeam,
+      formatTeamName(match.homeTeam),
+      match.awayTeam,
+      formatTeamName(match.awayTeam),
+      match.venue,
+      match.groupName,
+      match.stage,
+      match.status,
+    ]);
+  });
+  const unfinishedMatches = filteredMatches.filter((match) => match.status !== "finished");
+  const finishedMatches = filteredMatches.filter((match) => match.status === "finished");
   const unfinishedGroups = groupMatchesByDate(unfinishedMatches);
   const finishedGroups = groupMatchesByDate(finishedMatches).slice().reverse();
   const activeSummary = sourceSummaries.find((summary) => summary.sourceName === activeSource);
   const lastSyncedAt = activeSummary?.lastSyncedAt;
+  const groupOptions = Array.from(new Set(allMatches.map((match) => match.groupName).filter(Boolean)))
+    .sort()
+    .map((value) => ({ value: value!, label: `${value} 组` }));
+  const activeFilterCount = countActiveFilters({
+    source: requestedSource,
+    status,
+    stage,
+    group,
+    dateFrom,
+    dateTo,
+    q,
+  });
 
   return (
     <div className="space-y-6">
@@ -178,7 +218,7 @@ export default async function MatchesPage({ searchParams }: { searchParams?: Pro
             <h2 className="text-2xl font-semibold tracking-normal">比赛中心</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{matches.length} 场</Badge>
+            <Badge variant="outline">{filteredMatches.length} 场</Badge>
             <Badge variant="outline">已完结 {finishedMatches.length}</Badge>
             <Badge variant="outline">最近同步 {lastSyncedAt ? formatLocalMinute(lastSyncedAt) : "暂无"}</Badge>
           </div>
@@ -196,6 +236,50 @@ export default async function MatchesPage({ searchParams }: { searchParams?: Pro
       </div>
 
       <MatchSyncPanel summaries={sourceSummaries} visibleSource={activeSource} />
+
+      <ListFilterForm
+        action="/matches"
+        activeCount={activeFilterCount}
+        fields={[
+          {
+            name: "source",
+            label: "数据源",
+            type: "select",
+            value: requestedSource,
+            options: [
+              { value: "all", label: "全部来源" },
+              ...sourceSummaries.map((summary) => ({
+                value: summary.sourceName,
+                label: `${summary.sourceName} · ${summary.count}`,
+              })),
+            ],
+          },
+          {
+            name: "status",
+            label: "状态",
+            type: "select",
+            value: status,
+            options: MATCH_STATUS_OPTIONS,
+          },
+          {
+            name: "stage",
+            label: "阶段",
+            type: "select",
+            value: stage,
+            options: MATCH_STAGE_OPTIONS,
+          },
+          {
+            name: "group",
+            label: "小组",
+            type: "select",
+            value: group,
+            options: groupOptions,
+          },
+          { name: "dateFrom", label: "开始日期", type: "date", value: dateFrom },
+          { name: "dateTo", label: "结束日期", type: "date", value: dateTo },
+          { name: "q", label: "搜索", value: q, placeholder: "球队 / 场馆 / 编号" },
+        ]}
+      />
 
       <SourceFilter summaries={sourceSummaries} activeSource={activeSource} />
 
