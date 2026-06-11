@@ -71,6 +71,7 @@ export const matches = sqliteTable(
   (table) => [
     index("matches_kickoff_idx").on(table.kickoffAt),
     index("matches_status_stage_idx").on(table.status, table.stage),
+    uniqueIndex("matches_competition_season_number_idx").on(table.competition, table.season, table.matchNumber),
     uniqueIndex("matches_source_external_idx").on(table.dataSource, table.externalId),
   ],
 );

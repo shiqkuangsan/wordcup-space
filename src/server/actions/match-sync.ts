@@ -13,6 +13,17 @@ type SyncResult = {
   matchIds: string[];
 };
 
+const sourcePriority: Record<string, number> = {
+  "openfootball-worldcup-json-2026": 10,
+  "worldcup2026-api": 100,
+};
+
+function canReplaceMatchFacts(existingSource: string | null, incomingSource: string) {
+  const existingPriority = existingSource ? (sourcePriority[existingSource] ?? 100) : 0;
+  const incomingPriority = sourcePriority[incomingSource] ?? 100;
+  return incomingPriority >= existingPriority;
+}
+
 export async function syncMatches(input: z.input<typeof syncMatchesPayloadSchema>): Promise<SyncResult> {
   const payload = syncMatchesPayloadSchema.parse(input);
   const db = getDb();
@@ -24,11 +35,23 @@ export async function syncMatches(input: z.input<typeof syncMatchesPayloadSchema
     const matchIds: string[] = [];
 
     for (const item of payload.matches) {
-      const existing = tx
-        .select()
-        .from(matches)
-        .where(and(eq(matches.dataSource, payload.sourceName), eq(matches.externalId, item.externalId)))
-        .get();
+      const existing = item.matchNumber
+        ? tx
+            .select()
+            .from(matches)
+            .where(
+              and(
+                eq(matches.competition, item.competition),
+                eq(matches.season, item.season),
+                eq(matches.matchNumber, item.matchNumber),
+              ),
+            )
+            .get()
+        : tx
+            .select()
+            .from(matches)
+            .where(and(eq(matches.dataSource, payload.sourceName), eq(matches.externalId, item.externalId)))
+            .get();
 
       const row = {
         competition: item.competition,
@@ -49,7 +72,9 @@ export async function syncMatches(input: z.input<typeof syncMatchesPayloadSchema
       };
 
       if (existing) {
-        tx.update(matches).set(row).where(eq(matches.id, existing.id)).run();
+        if (canReplaceMatchFacts(existing.dataSource, payload.sourceName)) {
+          tx.update(matches).set(row).where(eq(matches.id, existing.id)).run();
+        }
         updated += 1;
         matchIds.push(existing.id);
       } else {

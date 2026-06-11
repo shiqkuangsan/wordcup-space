@@ -11,7 +11,7 @@ import { countActiveFilters, getSearchParam, matchesDateRange, matchesText, type
 import { formatMatchStage, formatMatchStatus, MATCH_STAGE_OPTIONS, MATCH_STATUS_OPTIONS } from "@/domain/match-sync";
 import { formatTeamName, getTeamFlag } from "@/domain/team-names";
 import { listMatches } from "@/server/queries/matches";
-import { ensureWorldCup2026MatchesFresh } from "@/server/actions/worldcup-sync";
+import { ensureWorldCup2026ApiMatchesFresh } from "@/server/actions/worldcup2026-api-sync";
 import { WORLDCUP2026_API_SOURCE_NAME } from "@/server/providers/worldcup2026-api";
 
 export const dynamic = "force-dynamic";
@@ -154,7 +154,7 @@ function SourceFilter({
 }
 
 export default async function MatchesPage({ searchParams }: { searchParams?: Promise<SearchParamsRecord> }) {
-  const syncStatus = await ensureWorldCup2026MatchesFresh();
+  const syncStatus = await ensureWorldCup2026ApiMatchesFresh();
   const allMatches = await listMatches();
   const sourceSummaries = summarizeSources(allMatches);
   const hasWorldCup2026Api = sourceSummaries.some((summary) => summary.sourceName === WORLDCUP2026_API_SOURCE_NAME);
