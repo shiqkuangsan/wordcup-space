@@ -36,6 +36,8 @@
 
 系统端到端流程参见 [docs/system-workflow.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/system-workflow.md:1)，包含赛程同步、盘口录入、决策、执行、成交、结算、账本和复盘闭环。
 
+口述、截图和下注凭证交给 Codex 处理的格式参见 [docs/codex-capture-guide.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/codex-capture-guide.md:1)。
+
 外部 provider 与 Codex 工作流接入参见 [docs/provider-agent-integration.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/provider-agent-integration.md:1)。
 
 关键默认值：
