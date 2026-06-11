@@ -58,8 +58,8 @@ export default async function BetsPage({
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-      <div className="space-y-6">
+    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="min-w-0 space-y-6">
         <ListFilterForm
           action="/bets"
           activeCount={activeFilterCount}

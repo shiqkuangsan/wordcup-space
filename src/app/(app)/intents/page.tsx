@@ -93,8 +93,8 @@ export default async function IntentsPage({
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-      <div className="space-y-4">
+    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="min-w-0 space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <h2 className="text-2xl font-semibold tracking-normal">决策队列</h2>
           <span className="text-sm text-muted-foreground">{intents.length} 条</span>

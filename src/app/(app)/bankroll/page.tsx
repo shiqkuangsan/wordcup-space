@@ -57,8 +57,8 @@ export default async function BankrollPage({
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-      <div className="space-y-4">
+    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="min-w-0 space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <PortfolioSummary title="User" balanceCents={user?.allocatedBalanceCents ?? 0} subtitle="用户逻辑账本" />
           <PortfolioSummary title="Codex" balanceCents={codex?.allocatedBalanceCents ?? 0} subtitle="Codex 独立额度" />
