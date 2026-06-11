@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { betIntents, betSlipLegs, betSlips, executionAttempts, matches, oddsSnapshots, portfolioLedgerEntries, portfolios, settlements } from "@/db/schema";
+import { betIntentLegs, betIntents, betSlipLegs, betSlips, executionAttempts, matches, oddsSnapshots, portfolioLedgerEntries, portfolios, settlements } from "@/db/schema";
 import { localDateKey } from "@/domain/dates";
 import { summarizeReviewByDecision } from "@/domain/review-metrics";
 import { formatMatchTitle } from "@/domain/team-names";
@@ -12,6 +12,7 @@ export async function getDashboardSummary() {
   const settlementRows = db.select().from(settlements).all();
   const attemptRows = db.select().from(executionAttempts).all();
   const slipLegRows = db.select().from(betSlipLegs).all();
+  const intentLegRows = db.select().from(betIntentLegs).all();
   const oddsRows = db.select().from(oddsSnapshots).all();
   const pendingIntentRows = db
     .select()
@@ -36,6 +37,12 @@ export async function getDashboardSummary() {
     .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
   const todayMatches = upcomingMatches.filter((match) => localDateKey(match.kickoffAt) === todayKey);
   const focusMatches = (todayMatches.length ? todayMatches : upcomingMatches).slice(0, 8);
+  const pendingIntentIds = new Set(pendingIntentRows.map((intent) => intent.id));
+  const pendingIntentMatchIds = new Set(
+    intentLegRows
+      .filter((leg) => pendingIntentIds.has(leg.betIntentId))
+      .map((leg) => leg.matchId),
+  );
 
   for (const odds of oddsRows) {
     oddsCountByMatch.set(odds.matchId, (oddsCountByMatch.get(odds.matchId) ?? 0) + 1);
@@ -74,6 +81,12 @@ export async function getDashboardSummary() {
       .orderBy(desc(portfolioLedgerEntries.createdAt))
       .limit(10)
       .all(),
+    balanceLedgerEntries: db
+      .select()
+      .from(portfolioLedgerEntries)
+      .orderBy(desc(portfolioLedgerEntries.createdAt))
+      .limit(200)
+      .all(),
     recentBetSlips: db.select().from(betSlips).orderBy(desc(betSlips.createdAt)).limit(10).all(),
     commandCenter: {
       dateKey: todayKey,
@@ -82,18 +95,27 @@ export async function getDashboardSummary() {
         id: match.id,
         href: `/matches/${match.id}`,
         title: formatMatchTitle(match.homeTeam, match.awayTeam),
+        homeTeam: match.homeTeam,
+        awayTeam: match.awayTeam,
         kickoffAt: match.kickoffAt,
         status: match.status,
         oddsCount: oddsCountByMatch.get(match.id) ?? 0,
       })),
       missingOdds: upcomingMatches
-        .filter((match) => (oddsCountByMatch.get(match.id) ?? 0) === 0)
+        .filter((match) => {
+          const isToday = localDateKey(match.kickoffAt) === todayKey;
+          const hasPendingIntent = pendingIntentMatchIds.has(match.id);
+          return (isToday || hasPendingIntent) && (oddsCountByMatch.get(match.id) ?? 0) === 0;
+        })
         .slice(0, 8)
         .map((match) => ({
           id: match.id,
           href: `/matches/${match.id}`,
           title: formatMatchTitle(match.homeTeam, match.awayTeam),
+          homeTeam: match.homeTeam,
+          awayTeam: match.awayTeam,
           kickoffAt: match.kickoffAt,
+          reason: pendingIntentMatchIds.has(match.id) ? "已有 intent" : "今日比赛",
         })),
       pendingIntents: pendingIntentRows.slice(0, 8).map((intent) => ({
         id: intent.id,
@@ -111,6 +133,8 @@ export async function getDashboardSummary() {
             slipId: slip.id,
             href: `/bets?matchId=${encodeURIComponent(match.id)}`,
             matchTitle: formatMatchTitle(match.homeTeam, match.awayTeam),
+            homeTeam: match.homeTeam,
+            awayTeam: match.awayTeam,
             stakeCents: slip.stakeCents,
             finalOdds: slip.finalOdds,
           };

@@ -15,13 +15,21 @@ export default async function DashboardPage() {
   const user = summary.portfolios.find((portfolio) => portfolio.id === "user");
   const codex = summary.portfolios.find((portfolio) => portfolio.id === "codex");
   const openExposure = summary.openBetSlips.reduce((sum, slip) => sum + slip.stakeCents, 0);
-  const balancePoints = summary.recentLedgerEntries
-    .filter((entry) => entry.portfolioId === "codex")
+  const balancePoints = summary.balanceLedgerEntries
+    .slice()
     .reverse()
     .map((entry) => ({
-      label: entry.createdAt.slice(0, 10),
-      codex: entry.balanceAfterCents / 100,
+      label: `${entry.createdAt.slice(5, 10)} ${entry.createdAt.slice(11, 16)}`,
+      user: entry.portfolioId === "user" ? entry.balanceAfterCents / 100 : undefined,
+      codex: entry.portfolioId === "codex" ? entry.balanceAfterCents / 100 : undefined,
     }));
+  if (balancePoints.length === 0) {
+    balancePoints.push({
+      label: "当前",
+      user: (user?.allocatedBalanceCents ?? 0) / 100,
+      codex: (codex?.allocatedBalanceCents ?? 0) / 100,
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -45,7 +53,7 @@ export default async function DashboardPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Codex 余额曲线</CardTitle>
+          <CardTitle>资金余额曲线</CardTitle>
         </CardHeader>
         <CardContent>
           {balancePoints.length ? (
@@ -61,7 +69,7 @@ export default async function DashboardPage() {
         <RecentBetsTable slips={summary.recentBetSlips} />
       </div>
       <p className="text-sm text-muted-foreground">
-        当前 Codex 可用余额：{formatCny(codex?.allocatedBalanceCents ?? 0)}
+        当前 User 可用余额：{formatCny(user?.allocatedBalanceCents ?? 0)}；Codex 可用余额：{formatCny(codex?.allocatedBalanceCents ?? 0)}
       </p>
     </div>
   );

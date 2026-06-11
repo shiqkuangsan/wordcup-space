@@ -8,13 +8,18 @@ const ReactECharts = dynamic(() => import("echarts-for-react"), {
 
 type BalancePoint = {
   label: string;
-  codex: number;
+  user?: number;
+  codex?: number;
 };
 
 export function BalanceChart({ points }: { points: BalancePoint[] }) {
   const option = {
     backgroundColor: "transparent",
     grid: { left: 32, right: 16, top: 24, bottom: 24 },
+    legend: {
+      top: 0,
+      textStyle: { color: "#a3a3a3" },
+    },
     tooltip: { trigger: "axis" },
     xAxis: {
       type: "category",
@@ -29,11 +34,21 @@ export function BalanceChart({ points }: { points: BalancePoint[] }) {
     series: [
       {
         type: "line",
-        name: "Codex",
-        data: points.map((point) => point.codex),
+        name: "User",
+        data: points.map((point) => point.user ?? null),
         smooth: true,
+        connectNulls: true,
+        symbol: "circle",
+        lineStyle: { color: "#22c55e", width: 2 },
+      },
+      {
+        type: "line",
+        name: "Codex",
+        data: points.map((point) => point.codex ?? null),
+        smooth: true,
+        connectNulls: true,
+        symbol: "circle",
         lineStyle: { color: "#fafafa", width: 2 },
-        areaStyle: { color: "rgba(250,250,250,0.08)" },
       },
     ],
   };
