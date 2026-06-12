@@ -1,5 +1,7 @@
 .catpaw/
-.agents/
+.agents/*
+!.agents/skills/
+!.agents/skills/**
 .env
 .env.*
 !.env.example

@@ -11,25 +11,42 @@ This skill governs Codex score prediction records for `wordcup-space`.
 
 Never create a prediction after the match has already started or ended. If kickoff time has passed, record only a result/review, not a forecast.
 
+Only predict the current local week. In this project, "this week" means the user's local calendar week in `Asia/Taipei`, from now until Sunday 23:59:59. Do not pre-fill next week, later group-stage rounds, knockout matches, or any fixture outside the current weekly window.
+
 Prediction is separate from betting:
 
 - A prediction may be recorded without any bet intent.
 - A bet intent requires the stricter betting evidence gate.
-- Prediction accuracy is evaluated by exact score and outcome only; it does not imply betting profit.
+- Prediction accuracy is evaluated by exact score. Win/draw/loss is only derived from the score when internal statistics need it; do not present it as a separate forecast.
 
 ## Required Workflow
 
 1. Read local `matches` and existing `codex_predictions`.
-2. Sort upcoming matches by kickoff time and predict before kickoff.
-3. For each prediction, gather the best available pre-match evidence:
+2. Build the candidate pool from matches that are both:
+   - not started yet; and
+   - inside the current local-week window.
+3. Sort weekly candidates by kickoff time.
+4. For each candidate, gather the best available pre-match evidence:
    - current odds or market baseline when available;
    - recent form and strength signal;
    - injuries, suspensions, lineup or team-news uncertainty;
    - tactical matchup and likely scoring environment;
    - opposing evidence.
-4. Produce a scoreline, outcome, confidence, rationale, and risk note.
-5. Write the prediction through `POST /api/predictions` when the app service is available.
-6. After final result is known, update the same prediction with actual score and hit flags.
+5. Decide one of three actions:
+   - `predict`: produce a scoreline, confidence, rationale, and risk note;
+   - `defer`: wait for more information such as odds, lineup, injuries, or weather;
+   - `abstain`: explicitly do not predict because the information quality is too poor or the match context is outside Codex's current edge.
+6. Write only `predict` decisions through `POST /api/predictions` when the app service is available. Do not create fake score rows for `defer` or `abstain` unless the app later adds a first-class abstention record type.
+7. When rerun before kickoff, re-check new information and update an existing prediction if the new evidence materially changes the view. Record the changed rationale and risk note.
+8. After final result is known, update the same prediction with actual score and hit flags.
+
+## Rerun Discipline
+
+- This skill is expected to be run repeatedly during the week.
+- A rerun is not a command to predict everything; it is a fresh weekly scan.
+- User and Codex may ask for the same weekly scan multiple times as odds, team news, injuries, weather, or lineup information changes.
+- If a previous prediction becomes weak after new evidence, update it before kickoff or mark it in the user-facing summary as needing reassessment.
+- Never wait until after kickoff to "fix" a forecast. After kickoff, only settle or review.
 
 ## API Shape
 
@@ -65,12 +82,12 @@ For user-facing summaries, use:
 ```text
 Codex 预测：
 比赛：
-预测比分：
-胜平负：
+动作：预测 / 暂缓 / 不预测
+预测比分：仅在动作为“预测”时填写
 置信度：
 依据：
 风险：
 是否转下注：否/观察/另行评估
 ```
 
-If there is not enough time to research every detail before kickoff, make the best bounded pre-match prediction and mark the data limitations in `riskNote`; do not skip an upcoming match because research is imperfect.
+If information is incomplete, do not force a scoreline. Use `defer` when more information may arrive before kickoff, or `abstain` when Codex has no meaningful edge.
