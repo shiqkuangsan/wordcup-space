@@ -300,7 +300,7 @@ export default async function MatchesPage({ searchParams }: { searchParams?: Pro
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
+      <div className="sticky top-[-16px] z-30 -mx-4 -mt-4 space-y-2 border-b bg-background px-4 pt-4 pb-3 shadow-sm md:top-[-24px] md:-mx-6 md:-mt-6 md:px-6 md:pt-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="font-mono text-sm text-muted-foreground">2026 World Cup</p>
