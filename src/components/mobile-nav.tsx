@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const mobileLinks = [
   { href: "/", label: "总览" },
   { href: "/matches", label: "比赛" },
+  { href: "/predictions", label: "预测" },
   { href: "/bankroll", label: "资金" },
   { href: "/intents", label: "决策" },
   { href: "/bets", label: "注单" },

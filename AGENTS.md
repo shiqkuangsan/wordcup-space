@@ -25,4 +25,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - 外部 provider / agent 工具边界参见 `docs/provider-agent-integration.md`。
 - 创建 Codex 决策前，先按 `docs/codex-analysis-contract.md` 形成结构化分析，并默认走 `/api/intents` 的 `dryRun: true`。
+- 当 Codex 做赛前比分预测、每周预测、预测命中复盘或写入 `/api/predictions` 时，优先使用项目 skill `.agents/skills/codex-match-predictor/SKILL.md`。
+- 当 Codex 作为自主下注账户选择比赛、盘口、金额、串关或复盘历史结果时，优先使用项目 skill `.agents/skills/codex-betting-operator/SKILL.md`。
+- Codex 自主下注的工作单元是“本周可下注比赛组合”，不是孤立逐场问答；必须先扫本周候选池，再自主决定单场、串关、放弃、金额和执行顺序。
+- 当本周下注分析 goal 激活时，Codex 要主动推进候选池扫描和决策，不等用户逐场触发；真实下注的最终提交必须等用户确认。
+- User 与 Codex 是完全隔离的决策/资金主体；User 已下注不能作为 Codex 跳过同场、同盘口、同方向或同金额的理由。
 - `rezarahiminia/worldcup2026` 只作为 read-only 赛程/场馆/比分 provider；`machina-sports/sports-skills` 只作为 Codex/agent runtime 工具，不进入 app 运行时依赖。

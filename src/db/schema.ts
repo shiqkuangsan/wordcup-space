@@ -90,6 +90,41 @@ export const matchResults = sqliteTable("match_results", {
   ...timestamps,
 });
 
+export const codexPredictions = sqliteTable(
+  "codex_predictions",
+  {
+    id: text("id").primaryKey(),
+    matchId: text("match_id")
+      .notNull()
+      .references(() => matches.id),
+    predictedBy: text("predicted_by").notNull().default("codex"),
+    predictionScope: text("prediction_scope").notNull().default("full_time"),
+    predictedHomeScore: integer("predicted_home_score").notNull(),
+    predictedAwayScore: integer("predicted_away_score").notNull(),
+    predictedOutcome: text("predicted_outcome").notNull(),
+    confidence: text("confidence").notNull(),
+    dataMode: text("data_mode").notNull().default("offline"),
+    rationale: text("rationale").notNull(),
+    riskNote: text("risk_note").notNull(),
+    sourcesJson: text("sources_json"),
+    status: text("status").notNull().default("predicted"),
+    predictedAt: text("predicted_at").notNull(),
+    actualHomeScore: integer("actual_home_score"),
+    actualAwayScore: integer("actual_away_score"),
+    actualOutcome: text("actual_outcome"),
+    scoreHit: integer("score_hit", { mode: "boolean" }),
+    outcomeHit: integer("outcome_hit", { mode: "boolean" }),
+    resultSourceNote: text("result_source_note"),
+    resultCheckedAt: text("result_checked_at"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("predictions_match_actor_scope_idx").on(table.matchId, table.predictedBy, table.predictionScope),
+    index("predictions_match_idx").on(table.matchId, table.predictedAt),
+    index("predictions_status_idx").on(table.status, table.predictedAt),
+  ],
+);
+
 export const oddsSnapshots = sqliteTable(
   "odds_snapshots",
   {
@@ -292,6 +327,17 @@ export const portfolioRelations = relations(portfolios, ({ many }) => ({
   ledgerEntries: many(portfolioLedgerEntries),
   betIntents: many(betIntents),
   betSlips: many(betSlips),
+}));
+
+export const matchRelations = relations(matches, ({ many }) => ({
+  predictions: many(codexPredictions),
+}));
+
+export const codexPredictionRelations = relations(codexPredictions, ({ one }) => ({
+  match: one(matches, {
+    fields: [codexPredictions.matchId],
+    references: [matches.id],
+  }),
 }));
 
 export const betIntentRelations = relations(betIntents, ({ many, one }) => ({

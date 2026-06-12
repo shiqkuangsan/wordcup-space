@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3107",
     "build": "next build",
-    "start": "next start",
-    "start:local": "next start --port 3107",
+    "run": "next build && next start --port 3108",
+    "start": "next start --port 3108",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

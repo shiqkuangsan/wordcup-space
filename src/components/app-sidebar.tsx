@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BadgeDollarSign, ChartSpline, ClipboardList, Goal, Settings, Trophy } from "lucide-react";
+import { BadgeDollarSign, Brain, ChartSpline, ClipboardList, Goal, Settings, Trophy } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "总览", icon: ChartSpline },
   { href: "/matches", label: "比赛中心", icon: Trophy },
+  { href: "/predictions", label: "Codex 预测", icon: Brain },
   { href: "/bankroll", label: "资金账本", icon: BadgeDollarSign },
   { href: "/intents", label: "决策队列", icon: ClipboardList },
   { href: "/bets", label: "注单中心", icon: Goal },

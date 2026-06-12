@@ -8,6 +8,9 @@ node_modules/
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+tmp/*
+!tmp/.gitkeep
+ops/*.log
 data/raw/*
 !data/raw/README.md
 data/processed/*
