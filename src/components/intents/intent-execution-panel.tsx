@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { isIntentExecutable } from "@/domain/bet-lifecycle";
 import { formatCny } from "@/domain/money";
 import { getDefaultPlatformAccountId } from "@/domain/platform-defaults";
 import type { betIntents, platformAccounts } from "@/db/schema";
@@ -59,7 +60,7 @@ export function IntentExecutionPanel({
   const [loadingAction, setLoadingAction] = useState<"preview" | "create" | null>(null);
   const hasAccounts = platformAccounts.length > 0;
   const defaultPlatformId = getDefaultPlatformAccountId(platformAccounts);
-  const isExecutable = !["executed", "cancelled", "expired"].includes(intent.status);
+  const isExecutable = isIntentExecutable(intent);
 
   function payloadFromForm(form: HTMLFormElement, dryRun: boolean) {
     const formData = new FormData(form);
@@ -125,7 +126,7 @@ export function IntentExecutionPanel({
   }
 
   if (!isExecutable) {
-    return <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">该 intent 已结束，不再显示执行入口。</div>;
+    return <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">该 intent 已结束或执行窗口已过，不再显示执行入口。</div>;
   }
 
   return (

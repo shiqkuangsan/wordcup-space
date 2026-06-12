@@ -108,6 +108,44 @@ afterEach(() => {
 });
 
 describe("betting lifecycle actions", () => {
+  it("blocks expired intents from creating bet slips", async () => {
+    const intent = await createBetIntent({
+      portfolioId: "codex",
+      decisionBy: "codex",
+      mode: "single",
+      market: "1X2",
+      intendedStakeCents: 10000,
+      intendedTotalOdds: 2,
+      riskTier: "normal",
+      confidence: "medium",
+      rationale: "过期 intent 不能执行。",
+      expiresAt: "2026-06-10T10:00:00.000Z",
+    });
+    const attempt = await createExecutionAttempt({
+      betIntentId: intent.id,
+      executionMethod: "user_manual",
+      platformAccountId: "betway-main",
+      intendedOdds: 2,
+      observedOdds: 2,
+    });
+    await markExecutionAttempt({
+      id: attempt.id,
+      status: "succeeded",
+      observedOdds: 2,
+    });
+
+    await expect(createBetSlipFromAttempt({
+      executionAttemptId: attempt.id,
+      platformAccountId: "betway-main",
+      stakeCents: 10000,
+      finalOdds: 2,
+      isRealMoney: true,
+      placedAt: "2026-06-10T10:00:01.000Z",
+    })).rejects.toThrow("bet intent execution window has expired");
+    expect(rowCount(betSlips)).toBe(0);
+    expect(codexBalance()).toBe(100000);
+  });
+
   it("does not change balance for intents or failed attempts, then deducts and settles correctly", async () => {
     const match = await createMatch({
       stage: "group",

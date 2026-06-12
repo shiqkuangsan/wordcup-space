@@ -6,6 +6,7 @@ import { ReviewEntryPanel } from "@/components/bets/review-entry-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db/client";
 import { betIntents, betSlipLegs, decisionReviews, matches, platformAccounts } from "@/db/schema";
+import { isIntentExecutable } from "@/domain/bet-lifecycle";
 import { formatMarketLabel } from "@/domain/betting-markets";
 import { formatLocalMinute } from "@/domain/dates";
 import { formatBetModeLabel, formatBetSlipStatus, formatDecisionByLabel } from "@/domain/display-labels";
@@ -34,7 +35,8 @@ export default async function BetsPage({
   const openSlips = slips.filter((slip) => slip.status === "open");
   const settledSlips = slips.filter((slip) => slip.status !== "open");
   const intents = db.select().from(betIntents).orderBy(desc(betIntents.createdAt)).all();
-  const executableIntents = intents.filter((intent) => !["executed", "cancelled", "expired"].includes(intent.status));
+  const now = new Date();
+  const executableIntents = intents.filter((intent) => isIntentExecutable(intent, now));
   const accounts = db.select().from(platformAccounts).orderBy(desc(platformAccounts.createdAt)).all();
   const allMatches = db.select().from(matches).orderBy(desc(matches.kickoffAt)).all();
   const allSlipLegs = db.select().from(betSlipLegs).all();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canCreateBetSlip, canExpireIntent, canSettleBetSlip } from "@/domain/bet-lifecycle";
+import { canCreateBetSlip, canExpireIntent, canSettleBetSlip, getEffectiveIntentStatus, isIntentExecutable } from "@/domain/bet-lifecycle";
 
 describe("bet lifecycle", () => {
   it("blocks failed attempts from creating bet slips", () => {
@@ -45,5 +45,14 @@ describe("bet lifecycle", () => {
         new Date("2026-06-10T10:00:01Z"),
       ),
     ).toBe(false);
+  });
+
+  it("derives executable and effective intent status from the execution window", () => {
+    const now = new Date("2026-06-10T10:00:01Z");
+
+    expect(isIntentExecutable({ status: "proposed", expiresAt: "2026-06-10T10:00:00Z" }, now)).toBe(false);
+    expect(getEffectiveIntentStatus({ status: "proposed", expiresAt: "2026-06-10T10:00:00Z" }, now)).toBe("expired");
+    expect(isIntentExecutable({ status: "proposed", expiresAt: "2026-06-10T10:10:00Z" }, now)).toBe(true);
+    expect(isIntentExecutable({ status: "executed" }, now)).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { betIntents, betSlips, portfolios } from "@/db/schema";
-import { canCreateBetSlip, canSettleBetSlip } from "@/domain/bet-lifecycle";
+import { canCreateBetSlip, canSettleBetSlip, isIntentExecutable } from "@/domain/bet-lifecycle";
 import { getNextBalanceCents } from "@/domain/ledger";
 import { getPotentialReturnCents } from "@/domain/money";
 import { getOddsChangePct, normalizeOddsFormat, toDecimalOdds } from "@/domain/odds";
@@ -96,6 +96,7 @@ export function buildBetSlipPreview(body: PreviewBody) {
 
   const portfolio = db.select().from(portfolios).where(eq(portfolios.id, intent.portfolioId)).get();
   if (!portfolio) throw new Error(`portfolio not found: ${intent.portfolioId}`);
+  if (!isIntentExecutable(intent)) throw new Error("bet intent execution window has expired");
 
   const stakeCents = stakeCentsFromBody(body);
   const oddsFormat = normalizeOddsFormat(body.oddsFormat);

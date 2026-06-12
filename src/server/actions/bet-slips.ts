@@ -10,7 +10,7 @@ import {
   portfolioLedgerEntries,
   portfolios,
 } from "@/db/schema";
-import { canCreateBetSlip } from "@/domain/bet-lifecycle";
+import { canCreateBetSlip, isIntentExecutable } from "@/domain/bet-lifecycle";
 import { getNextBalanceCents } from "@/domain/ledger";
 import { getPotentialReturnCents } from "@/domain/money";
 import { createId } from "@/server/actions/ids";
@@ -51,6 +51,7 @@ export async function createBetSlipFromAttempt(
       .get();
 
     if (!intent) throw new Error(`bet intent not found: ${attempt.betIntentId}`);
+    if (!isIntentExecutable(intent, new Date(data.placedAt))) throw new Error("bet intent execution window has expired");
 
     const portfolio = tx
       .select()

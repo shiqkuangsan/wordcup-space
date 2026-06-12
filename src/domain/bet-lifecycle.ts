@@ -35,3 +35,15 @@ export function canExpireIntent(intent: BetIntentLike, now = new Date()) {
   if (!intent.expiresAt) return false;
   return new Date(intent.expiresAt).getTime() <= now.getTime();
 }
+
+export function isIntentTerminal(status: string) {
+  return ["executed", "cancelled", "expired"].includes(status);
+}
+
+export function isIntentExecutable(intent: BetIntentLike, now = new Date()) {
+  return !isIntentTerminal(intent.status) && !canExpireIntent(intent, now);
+}
+
+export function getEffectiveIntentStatus(intent: BetIntentLike, now = new Date()) {
+  return canExpireIntent(intent, now) ? "expired" : intent.status;
+}
