@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const syncedOddsBookmakerSchema = z.enum(["FanDuel", "bet365"]);
+export const syncedOddsBookmakerSchema = z.enum(["DraftKings", "bet365", "Betway"]);
 export type SyncedOddsBookmaker = z.infer<typeof syncedOddsBookmakerSchema>;
 
 export type SyncedOddsSelection = {

@@ -52,18 +52,25 @@ beforeEach(() => {
   process.env.DATABASE_URL = dbPath;
   process.env.ODDS_SOURCE_FIXTURES_JSON = JSON.stringify([
     {
+      kind: "espn-draftkings",
       matchNumber: 1,
-      bookmaker: "FanDuel",
-      sourceLabel: "test FanDuel",
-      sourceUrl: "https://example.test/fanduel",
-      selections: { home: "Mexico", away: "South Africa", draw: "draw" },
+      eventId: 1001,
     },
     {
+      kind: "html-american",
       matchNumber: 1,
       bookmaker: "bet365",
       sourceLabel: "test bet365",
       sourceUrl: "https://example.test/bet365",
-      selections: { home: "Mexico", away: "South Africa", draw: "Draw" },
+      selections: { home: "Mexico", away: "South Africa", draw: "Tie" },
+    },
+    {
+      kind: "html-decimal",
+      matchNumber: 1,
+      bookmaker: "Betway",
+      sourceLabel: "test Betway",
+      sourceUrl: "https://example.test/betway",
+      selections: { home: "Mexico", away: "South Africa" },
     },
   ]);
   resetDbForTests();
@@ -79,20 +86,29 @@ afterEach(() => {
 });
 
 describe("odds source sync", () => {
-  it("records pre-kickoff FanDuel and bet365 odds snapshots", async () => {
+  it("records pre-kickoff DraftKings, bet365, and Betway odds snapshots", async () => {
     insertMatch("2026-06-11T19:00:00.000Z");
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.endsWith("/fanduel")) {
-          return new Response("Mexico at -250, with South Africa at +800 and a draw at +350", { status: 200 });
+        if (url.includes("/events/1001/")) {
+          return Response.json({
+            items: [
+              {
+                provider: { name: "DraftKings" },
+                homeTeamOdds: { current: { moneyLine: { decimal: 1.4 } } },
+                awayTeamOdds: { current: { moneyLine: { decimal: 8 } } },
+                drawOdds: { moneyLine: 350 },
+              },
+            ],
+          });
         }
         if (url.endsWith("/bet365")) {
-          return new Response(
-            "<table><tr><td>Mexico</td><td>21-50</td></tr><tr><td>South Africa</td><td>13-2</td></tr><tr><td>Draw</td><td>7-2</td></tr></table>",
-            { status: 200 },
-          );
+          return new Response("Mexico -250 Tie +350 South Africa +800", { status: 200 });
+        }
+        if (url.endsWith("/betway")) {
+          return new Response("Mexico South Africa 1.40 4.50 8.00", { status: 200 });
         }
         return new Response("not found", { status: 404 });
       }),
@@ -100,9 +116,45 @@ describe("odds source sync", () => {
 
     const result = await syncReferenceOdds(new Date("2026-06-11T09:00:00.000Z"));
 
-    expect(result.inserted).toBe(6);
+    expect(result.inserted).toBe(9);
     expect(result.errors).toEqual([]);
-    expect(getDb().select().from(oddsSnapshots).all()).toHaveLength(6);
+    expect(getDb().select().from(oddsSnapshots).all()).toHaveLength(9);
+  });
+
+  it("skips unchanged odds instead of writing duplicate snapshots", async () => {
+    insertMatch("2026-06-11T19:00:00.000Z");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/events/1001/")) {
+          return Response.json({
+            items: [
+              {
+                provider: { name: "DraftKings" },
+                homeTeamOdds: { current: { moneyLine: { decimal: 1.4 } } },
+                awayTeamOdds: { current: { moneyLine: { decimal: 8 } } },
+                drawOdds: { moneyLine: 350 },
+              },
+            ],
+          });
+        }
+        if (url.endsWith("/bet365")) return new Response("Mexico -250 Tie +350 South Africa +800", { status: 200 });
+        if (url.endsWith("/betway")) return new Response("Mexico South Africa 1.40 4.50 8.00", { status: 200 });
+        return new Response("not found", { status: 404 });
+      }),
+    );
+
+    await syncReferenceOdds(new Date("2026-06-11T09:00:00.000Z"));
+    const result = await syncReferenceOdds(new Date("2026-06-11T09:05:00.000Z"));
+
+    expect(result.inserted).toBe(0);
+    expect(result.skipped).toEqual([
+      { matchNumber: 1, bookmaker: "DraftKings", reason: "unchanged" },
+      { matchNumber: 1, bookmaker: "bet365", reason: "unchanged" },
+      { matchNumber: 1, bookmaker: "Betway", reason: "unchanged" },
+    ]);
+    expect(getDb().select().from(oddsSnapshots).all()).toHaveLength(9);
   });
 
   it("skips matches after kickoff without fetching odds", async () => {
@@ -114,8 +166,9 @@ describe("odds source sync", () => {
 
     expect(result.inserted).toBe(0);
     expect(result.skipped).toEqual([
-      { matchNumber: 1, bookmaker: "FanDuel", reason: "kickoff reached" },
+      { matchNumber: 1, bookmaker: "DraftKings", reason: "kickoff reached" },
       { matchNumber: 1, bookmaker: "bet365", reason: "kickoff reached" },
+      { matchNumber: 1, bookmaker: "Betway", reason: "kickoff reached" },
     ]);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(getDb().select().from(oddsSnapshots).all()).toHaveLength(0);
@@ -131,7 +184,7 @@ describe("odds source sync", () => {
     const result = await syncReferenceOdds(new Date("2026-06-11T09:00:00.000Z"));
 
     expect(result.inserted).toBe(0);
-    expect(result.errors).toHaveLength(2);
+    expect(result.errors).toHaveLength(3);
     expect(getDb().select().from(oddsSnapshots).all()).toHaveLength(0);
   });
 });

@@ -1,6 +1,6 @@
 # 数据源
 
-最近检查日期：2026-06-10。
+最近检查日期：2026-06-12。
 
 ## 赛程和赛事数据
 
@@ -17,9 +17,19 @@
 | 优先级 | 来源 | 用途 | 备注 |
 |---|---|---|---|
 | 1 | 你提供的 Betway 盘口截图或文本 | 你实际看到的盘口，优先级最高 | 记录时间、博彩公司、市场、盘口线、赔率和截图/来源说明。 |
-| 2 | The Odds API | 多家博彩公司赔率标准化和横向比较 | https://theoddsapi.com/ |
-| 3 | 浏览器辅助采集 | 当赔率只在登录浏览器里可见时使用 | 只采集你有权访问的内容；只保存标准化数值，不保存账号凭据。 |
-| 4 | 手工研究 | 补充上下文和交叉校验 | 来源写入 `source_note`。 |
+| 2 | ESPN odds API / DraftKings | DraftKings 全场胜平负参考赔率 | 当前 `pnpm sync:odds` 默认使用 ESPN 的公开 odds API 拉取 DraftKings。 |
+| 3 | bet365 News / 可配置公开源 | bet365 全场胜平负参考赔率 | 公开 News 页只覆盖部分比赛；可用 `ODDS_SOURCE_FIXTURES_JSON` 增补来源。 |
+| 4 | Betway 公开页 / 浏览器辅助采集 | Betway 全场胜平负参考赔率 | Betway 可能按地区、维护页或反爬策略拦截命令行请求；失败时保留错误，不伪造数据。 |
+| 5 | The Odds API / 其他商业 odds API | 多家博彩公司赔率标准化和横向比较 | 使用本地环境变量保存 key，不提交 secrets。 |
+| 6 | 手工研究 | 补充上下文和交叉校验 | 来源写入 `source_note`。 |
+
+当前内置赔率同步目标平台限定为 Betway、bet365、DraftKings。命令：
+
+```bash
+pnpm sync:odds
+```
+
+同步写入 `odds_snapshots`。如果同一场、同一平台、同一市场的最新 1X2 赔率没有变化，命令会返回 `unchanged` 并跳过写入，避免重复快照。
 
 ## Codex / Agent 工具
 

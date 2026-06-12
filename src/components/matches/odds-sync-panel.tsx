@@ -17,7 +17,7 @@ export function OddsSyncPanel() {
         <CardTitle>赔率同步</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-        <span>同步 FanDuel / bet365 参考盘口；已开赛比赛会自动跳过。</span>
+        <span>同步 Betway / bet365 / DraftKings 参考盘口；已开赛或赔率未变化会自动跳过。</span>
         <form action={action}>
           <Button type="submit" variant="outline" size="sm">
             <RefreshCw />

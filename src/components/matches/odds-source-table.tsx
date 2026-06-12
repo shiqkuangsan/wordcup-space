@@ -8,8 +8,8 @@ type OddsSnapshot = typeof oddsSnapshots.$inferSelect;
 const bookmakerRank: Record<string, number> = {
   Betway: 0,
   betway: 0,
-  FanDuel: 1,
-  bet365: 2,
+  bet365: 1,
+  DraftKings: 2,
 };
 
 function includesAny(value: string, candidates: string[]) {
@@ -56,6 +56,11 @@ export function sortOddsGroups(groups: OddsSnapshot[][]) {
   });
 }
 
+function formatBookmakerName(value: string) {
+  if (value.toLowerCase() === "betway") return "Betway";
+  return value;
+}
+
 export function OddsSourceTable({
   groups,
   homeTeam,
@@ -91,7 +96,7 @@ export function OddsSourceTable({
 
           return (
             <TableRow key={`${first.bookmaker}-${first.market}`}>
-              <TableCell className="font-medium">{first.bookmaker}</TableCell>
+              <TableCell className="font-medium">{formatBookmakerName(first.bookmaker)}</TableCell>
               <TableCell className="font-mono tabular-nums">{home?.decimalOdds.toFixed(2) ?? "--"}</TableCell>
               <TableCell className="font-mono tabular-nums">{draw?.decimalOdds.toFixed(2) ?? "--"}</TableCell>
               <TableCell className="font-mono tabular-nums">{away?.decimalOdds.toFixed(2) ?? "--"}</TableCell>
@@ -130,7 +135,7 @@ export function OddsSourceMiniMatrix({
             key={`${first.bookmaker}-${first.market}`}
             className="grid grid-cols-[74px_minmax(58px,1fr)_48px_minmax(58px,1fr)] items-center gap-2 rounded border bg-background px-2 py-1 text-muted-foreground sm:grid-cols-[84px_minmax(80px,1fr)_56px_minmax(80px,1fr)]"
           >
-            <span className="truncate font-medium">{first.bookmaker}</span>
+            <span className="truncate font-medium">{formatBookmakerName(first.bookmaker)}</span>
             <span className="font-mono tabular-nums">{odds.home}</span>
             <span className="text-center font-mono tabular-nums">{odds.draw}</span>
             <span className="text-right font-mono tabular-nums">{odds.away}</span>
