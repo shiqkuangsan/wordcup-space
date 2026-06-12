@@ -18,6 +18,16 @@ type MarketChartPoint = {
   openExposure: number;
 };
 
+const chartColors = {
+  user: "#2563eb",
+  codex: "#f97316",
+  profit: "#16a34a",
+  exposure: "#64748b",
+  axis: "#71717a",
+  grid: "#d4d4d8",
+  legend: "#3f3f46",
+};
+
 const moneyAxisLabel = {
   formatter: (value: number) => `¥${value.toFixed(0)}`,
 };
@@ -25,10 +35,13 @@ const moneyAxisLabel = {
 export function ProfitLossChart({ points }: { points: ProfitLossPoint[] }) {
   const option = {
     backgroundColor: "transparent",
-    grid: { left: 48, right: 16, top: 28, bottom: 24 },
+    color: [chartColors.user, chartColors.codex],
+    grid: { left: 48, right: 20, top: 32, bottom: 28 },
     legend: {
       top: 0,
-      textStyle: { color: "#a3a3a3" },
+      itemWidth: 18,
+      itemHeight: 10,
+      textStyle: { color: chartColors.legend, fontWeight: 600 },
     },
     tooltip: {
       trigger: "axis",
@@ -37,14 +50,14 @@ export function ProfitLossChart({ points }: { points: ProfitLossPoint[] }) {
     xAxis: {
       type: "category",
       data: points.map((point) => point.label),
-      axisLine: { lineStyle: { color: "#737373" } },
-      axisLabel: { hideOverlap: true },
+      axisLine: { lineStyle: { color: chartColors.axis } },
+      axisLabel: { color: chartColors.axis, hideOverlap: true },
     },
     yAxis: {
       type: "value",
       axisLabel: moneyAxisLabel,
-      axisLine: { lineStyle: { color: "#737373" } },
-      splitLine: { lineStyle: { color: "#404040" } },
+      axisLine: { lineStyle: { color: chartColors.axis } },
+      splitLine: { lineStyle: { color: chartColors.grid, width: 1 } },
     },
     series: [
       {
@@ -53,7 +66,10 @@ export function ProfitLossChart({ points }: { points: ProfitLossPoint[] }) {
         data: points.map((point) => point.user),
         smooth: true,
         symbol: "circle",
-        lineStyle: { color: "#22c55e", width: 2 },
+        symbolSize: 7,
+        lineStyle: { color: chartColors.user, width: 3 },
+        itemStyle: { color: chartColors.user, borderColor: "#ffffff", borderWidth: 2 },
+        emphasis: { focus: "series", lineStyle: { width: 4 } },
       },
       {
         type: "line",
@@ -61,7 +77,10 @@ export function ProfitLossChart({ points }: { points: ProfitLossPoint[] }) {
         data: points.map((point) => point.codex),
         smooth: true,
         symbol: "circle",
-        lineStyle: { color: "#fafafa", width: 2 },
+        symbolSize: 7,
+        lineStyle: { color: chartColors.codex, width: 3 },
+        itemStyle: { color: chartColors.codex, borderColor: "#ffffff", borderWidth: 2 },
+        emphasis: { focus: "series", lineStyle: { width: 4 } },
       },
     ],
   };
@@ -72,10 +91,11 @@ export function ProfitLossChart({ points }: { points: ProfitLossPoint[] }) {
 export function MarketBreakdownChart({ points }: { points: MarketChartPoint[] }) {
   const option = {
     backgroundColor: "transparent",
+    color: [chartColors.profit, chartColors.exposure],
     grid: { left: 48, right: 16, top: 28, bottom: 40 },
     legend: {
       top: 0,
-      textStyle: { color: "#a3a3a3" },
+      textStyle: { color: chartColors.legend, fontWeight: 600 },
     },
     tooltip: {
       trigger: "axis",
@@ -84,27 +104,27 @@ export function MarketBreakdownChart({ points }: { points: MarketChartPoint[] })
     xAxis: {
       type: "category",
       data: points.map((point) => point.label),
-      axisLine: { lineStyle: { color: "#737373" } },
-      axisLabel: { interval: 0, rotate: points.length > 3 ? 20 : 0 },
+      axisLine: { lineStyle: { color: chartColors.axis } },
+      axisLabel: { color: chartColors.axis, interval: 0, rotate: points.length > 3 ? 20 : 0 },
     },
     yAxis: {
       type: "value",
       axisLabel: moneyAxisLabel,
-      axisLine: { lineStyle: { color: "#737373" } },
-      splitLine: { lineStyle: { color: "#404040" } },
+      axisLine: { lineStyle: { color: chartColors.axis } },
+      splitLine: { lineStyle: { color: chartColors.grid, width: 1 } },
     },
     series: [
       {
         type: "bar",
         name: "已结算盈亏",
         data: points.map((point) => point.profitLoss),
-        itemStyle: { color: "#22c55e" },
+        itemStyle: { color: chartColors.profit },
       },
       {
         type: "bar",
         name: "未结算敞口",
         data: points.map((point) => point.openExposure),
-        itemStyle: { color: "#a3a3a3" },
+        itemStyle: { color: chartColors.exposure },
       },
     ],
   };

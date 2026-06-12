@@ -12,24 +12,37 @@ type BalancePoint = {
   codex?: number;
 };
 
+const chartColors = {
+  user: "#2563eb",
+  codex: "#f97316",
+  axis: "#71717a",
+  grid: "#d4d4d8",
+  legend: "#3f3f46",
+};
+
 export function BalanceChart({ points }: { points: BalancePoint[] }) {
   const option = {
     backgroundColor: "transparent",
-    grid: { left: 32, right: 16, top: 24, bottom: 24 },
+    color: [chartColors.user, chartColors.codex],
+    grid: { left: 44, right: 20, top: 32, bottom: 28 },
     legend: {
       top: 0,
-      textStyle: { color: "#a3a3a3" },
+      itemWidth: 18,
+      itemHeight: 10,
+      textStyle: { color: chartColors.legend, fontWeight: 600 },
     },
     tooltip: { trigger: "axis" },
     xAxis: {
       type: "category",
       data: points.map((point) => point.label),
-      axisLine: { lineStyle: { color: "#737373" } },
+      axisLine: { lineStyle: { color: chartColors.axis } },
+      axisLabel: { color: chartColors.axis, hideOverlap: true },
     },
     yAxis: {
       type: "value",
-      axisLine: { lineStyle: { color: "#737373" } },
-      splitLine: { lineStyle: { color: "#404040" } },
+      axisLine: { lineStyle: { color: chartColors.axis } },
+      axisLabel: { color: chartColors.axis },
+      splitLine: { lineStyle: { color: chartColors.grid, width: 1 } },
     },
     series: [
       {
@@ -39,7 +52,10 @@ export function BalanceChart({ points }: { points: BalancePoint[] }) {
         smooth: true,
         connectNulls: true,
         symbol: "circle",
-        lineStyle: { color: "#22c55e", width: 2 },
+        symbolSize: 7,
+        lineStyle: { color: chartColors.user, width: 3 },
+        itemStyle: { color: chartColors.user, borderColor: "#ffffff", borderWidth: 2 },
+        emphasis: { focus: "series", lineStyle: { width: 4 } },
       },
       {
         type: "line",
@@ -48,7 +64,10 @@ export function BalanceChart({ points }: { points: BalancePoint[] }) {
         smooth: true,
         connectNulls: true,
         symbol: "circle",
-        lineStyle: { color: "#fafafa", width: 2 },
+        symbolSize: 7,
+        lineStyle: { color: chartColors.codex, width: 3 },
+        itemStyle: { color: chartColors.codex, borderColor: "#ffffff", borderWidth: 2 },
+        emphasis: { focus: "series", lineStyle: { width: 4 } },
       },
     ],
   };
