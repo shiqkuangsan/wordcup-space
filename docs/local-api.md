@@ -6,16 +6,16 @@
 
 端口约定：
 
-- `npm run dev` 启动开发服务，固定使用 `3107`。
-- `npm run start` 启动本机使用服务，固定使用 `3108`。
-- `npm run build` 只生成构建产物，不会自动重启 `3108`。
-- `npm run run` 会先构建再启动 `3108`，只在确认更新使用服务时执行。
+- `pnpm dev` 启动开发服务，固定使用 `3107`。
+- `pnpm start` 启动本机使用服务，固定使用 `3108`。
+- `pnpm build` 只生成构建产物，不会自动重启 `3108`。
+- `pnpm run run` 会先构建再启动 `3108`，只在确认更新使用服务时执行。
 - Codex 开发时可以验证 `3107`；除非用户明确要求更新使用服务，否则不要重启 `3108`。
 
 ## 同步 2026 世界杯小组赛
 
 ```bash
-npm run sync:worldcup2026
+pnpm sync:worldcup2026
 ```
 
 当前脚本使用 OpenFootball 的公开 JSON 数据源，只导入小组赛 72 场；后续如果需要 FIFA 官方页面二次校验，可由 Codex 浏览器读取后再走 `POST /api/matches/sync` 覆盖更新。
@@ -23,7 +23,7 @@ npm run sync:worldcup2026
 ## 同步 worldcup2026 API
 
 ```bash
-npm run sync:worldcup2026:api
+pnpm sync:worldcup2026:api
 ```
 
 这个脚本读取 `https://worldcup26.ir/get/games` 和 `/get/stadiums`，把可标准化的比赛写入 `matches`。它只同步比赛事实和比分状态元数据，不创建赔率、决策、注单、资金流水或结算。

@@ -54,17 +54,17 @@
 
 | 场景 | 命令 | 端口 | 说明 |
 |---|---|---:|---|
-| 开发/验证 | `npm run dev` | `3107` | Codex 开发、调试、页面验证使用。 |
-| 构建检查 | `npm run build` | 无 | 只生成 `.next` 构建产物；不会自动重启使用服务。 |
-| 日常使用 | `npm run start` | `3108` | 基于最近一次 build 的本机稳定服务。 |
-| 一键更新使用服务 | `npm run run` | `3108` | 先 build，再启动 3108；只在你确认更新时使用。 |
+| 开发/验证 | `pnpm dev` | `3107` | Codex 开发、调试、页面验证使用。 |
+| 构建检查 | `pnpm build` | 无 | 只生成 `.next` 构建产物；不会自动重启使用服务。 |
+| 日常使用 | `pnpm start` | `3108` | 基于最近一次 build 的本机稳定服务。 |
+| 一键更新使用服务 | `pnpm run run` | `3108` | 先 build，再启动 3108；只在你确认更新时使用。 |
 
 约定：
 
-- Codex 开发时可以运行 `npm run dev`、`npm run lint`、`npm test`、`npm run build` 做验证。
+- Codex 开发时可以运行 `pnpm dev`、`pnpm lint`、`pnpm test`、`pnpm build` 做验证。
 - Codex 不应擅自启动、停止或重启 `3108` 使用服务。
-- 只有你明确说“更新使用服务 / 重新部署 / build 后重启”，才执行 `npm run run` 或重启 `npm run start` 对应的 3108 服务。
-- `npm run build` 通过不代表 3108 已更新；3108 只有重启后才会使用新的构建产物。
+- 只有你明确说“更新使用服务 / 重新部署 / build 后重启”，才执行 `pnpm run run` 或重启 `pnpm start` 对应的 3108 服务。
+- `pnpm build` 通过不代表 3108 已更新；3108 只有重启后才会使用新的构建产物。
 
 ## 仓库结构
 

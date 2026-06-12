@@ -2,6 +2,7 @@
   "name": "wordcup-space",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev": "next dev --port 3107",
     "build": "next build",
@@ -54,5 +55,13 @@
     "tsx": "^4.22.4",
     "typescript": "^5",
     "vitest": "^4.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

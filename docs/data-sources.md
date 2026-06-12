@@ -7,7 +7,7 @@
 | 优先级 | 来源 | 用途 | 备注 |
 |---|---|---|---|
 | 1 | FIFA 官方赛程 | 校验比赛日期、场地、球队、赛果的最终事实源 | https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/match-schedule-fixtures-results-teams-stadiums |
-| 2 | `openfootball/worldcup.json` | 开放赛程基础数据和历史世界杯数据；当前 `npm run sync:worldcup2026` 使用此来源 | https://github.com/openfootball/worldcup.json |
+| 2 | `openfootball/worldcup.json` | 开放赛程基础数据和历史世界杯数据；当前 `pnpm sync:worldcup2026` 使用此来源 | https://github.com/openfootball/worldcup.json |
 | 3 | `rezarahiminia/worldcup2026` | 104 场比赛、48 队、12 组、16 场馆、比分和积分榜补充源；适合写成第二个 sync provider | https://github.com/rezarahiminia/worldcup2026 |
 | 4 | WC26 MCP / Machina `world-cup` skill | 适合 AI agent 使用的赛程、球队、市场和赛前 brief；付费或 MCP 可用性不保证 | https://github.com/machina-sports/sports-skills |
 | 5 | API-Football / API-SPORTS | 赛程、积分、首发、事件、球队/球员技术统计 | https://www.api-football.com/news/post/fifa-world-cup-2026-guide-to-using-data-with-api-sports |

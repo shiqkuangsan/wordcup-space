@@ -17,7 +17,7 @@
 
 | 阶段 | 当前入口 | 外部仓库可补强的部分 |
 |---|---|---|
-| 赛程同步 | `npm run sync:worldcup2026`、`POST /api/matches/sync` | 用 `worldcup2026` 补 104 场、场馆、比分和积分榜。 |
+| 赛程同步 | `pnpm sync:worldcup2026`、`POST /api/matches/sync` | 用 `worldcup2026` 补 104 场、场馆、比分和积分榜。 |
 | 盘口记录 | `/matches/[id]`、`odds_snapshots` | 仍以用户截图/文本为准；`sports-skills@betting` 只做换算和去水。 |
 | Codex 分析 | `/api/intents`、`bet_intents` | 用 `sports-skills` 收集上下文和做赔率数学，输出结构化 rationale。 |
 | 成交和结算 | `/api/bet-slips`、`/api/settlements` | 不接外部下注/交易执行。真实资金变化只由本地成交和结算动作触发。 |
@@ -131,8 +131,8 @@ Codex 分析输出必须包含：
 
 | 对象 | 更新方式 | 频率 |
 |---|---|---|
-| OpenFootball 赛程 | 现有 `npm run sync:worldcup2026` | 页面 stale check 或手动 |
-| `worldcup2026` API | 新增 `npm run sync:worldcup2026:api` | 赛前每 12 小时；比赛日每 1-2 小时手动触发 |
+| OpenFootball 赛程 | 现有 `pnpm sync:worldcup2026` | 页面 stale check 或手动 |
+| `worldcup2026` API | 新增 `pnpm sync:worldcup2026:api` | 赛前每 12 小时；比赛日每 1-2 小时手动触发 |
 | `sports-skills` skills | `npx skills add machina-sports/sports-skills --yes` 或单 skill upgrade | 每周一次；重大分析前手动 |
 | `sports-skills` CLI | `.agents/sports-skills-venv/bin/python -m pip install --upgrade sports-skills` | 每周一次；重大分析前手动 |
 | 外部仓库源码 clone | 只在研究/调试时临时 clone | 不定期，不进 git |
@@ -149,7 +149,7 @@ Codex 分析输出必须包含：
 
 ## 验证
 
-- `npm test` 覆盖 provider mapping 和冲突处理。
-- `npm run sync:worldcup2026:api` 在无 token 场景可读 games；不可用时返回清晰错误。
+- `pnpm test` 覆盖 provider mapping 和冲突处理。
+- `pnpm sync:worldcup2026:api` 在无 token 场景可读 games；不可用时返回清晰错误。
 - `POST /api/intents` 仍先 dry-run，不因外部工具自动写真实资金记录。
 - 文档中所有风险上限和真实资金默认语义保持一致。
