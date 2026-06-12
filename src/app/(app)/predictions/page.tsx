@@ -6,6 +6,7 @@ import { getDb } from "@/db/client";
 import { codexPredictions, matches, matchResults } from "@/db/schema";
 import { formatLocalMinute } from "@/domain/dates";
 import { formatMatchStatus } from "@/domain/match-sync";
+import { getScoreOutcome } from "@/domain/predictions";
 import { formatMatchTitle, formatTeamName } from "@/domain/team-names";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,11 @@ export default async function PredictionsPage() {
     const result = resultsByMatchId.get(prediction.matchId);
     const actualHomeScore = prediction.actualHomeScore ?? result?.homeScore;
     const actualAwayScore = prediction.actualAwayScore ?? result?.awayScore;
+    const actualOutcome =
+      prediction.actualOutcome ??
+      (actualHomeScore !== null && actualHomeScore !== undefined && actualAwayScore !== null && actualAwayScore !== undefined
+        ? getScoreOutcome(actualHomeScore, actualAwayScore)
+        : null);
     const title = match ? formatMatchTitle(match.homeTeam, match.awayTeam) : prediction.matchId;
 
     return {
@@ -44,6 +50,7 @@ export default async function PredictionsPage() {
       predictedBy: prediction.predictedBy,
       predictedHomeScore: prediction.predictedHomeScore,
       predictedAwayScore: prediction.predictedAwayScore,
+      predictedOutcome: prediction.predictedOutcome,
       confidence: prediction.confidence,
       dataMode: prediction.dataMode,
       status: prediction.status,
@@ -52,7 +59,9 @@ export default async function PredictionsPage() {
       predictedAt: formatLocalMinute(prediction.predictedAt),
       actualHomeScore,
       actualAwayScore,
+      actualOutcome,
       scoreHit: prediction.scoreHit,
+      outcomeHit: prediction.outcomeHit ?? (actualOutcome ? prediction.predictedOutcome === actualOutcome : null),
       resultSourceNote: prediction.resultSourceNote ?? result?.sourceNote ?? null,
       resultCheckedAt: prediction.resultCheckedAt,
     };

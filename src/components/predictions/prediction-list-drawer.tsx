@@ -13,7 +13,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { formatPredictionConfidence, formatPredictionDataMode, formatPredictionStatus } from "@/domain/predictions";
+import {
+  formatPredictionConfidence,
+  formatPredictionDataMode,
+  formatPredictionOutcome,
+  formatPredictionStatus,
+} from "@/domain/predictions";
+import { cn } from "@/lib/utils";
 
 export type PredictionListItem = {
   id: string;
@@ -25,6 +31,7 @@ export type PredictionListItem = {
   predictedBy: string;
   predictedHomeScore: number;
   predictedAwayScore: number;
+  predictedOutcome: string;
   confidence: string;
   dataMode: string;
   status: string;
@@ -33,7 +40,9 @@ export type PredictionListItem = {
   predictedAt: string;
   actualHomeScore?: number | null;
   actualAwayScore?: number | null;
+  actualOutcome?: string | null;
   scoreHit?: boolean | null;
+  outcomeHit?: boolean | null;
   resultSourceNote?: string | null;
   resultCheckedAt?: string | null;
 };
@@ -46,6 +55,36 @@ function ScoreBadge({ item }: { item: PredictionListItem }) {
     return <Badge variant="secondary" className="gap-1"><XCircle className="size-3" />比分未中</Badge>;
   }
   return <Badge variant="outline">待赛果</Badge>;
+}
+
+function OutcomeBadge({ item }: { item: PredictionListItem }) {
+  if (item.outcomeHit === true) {
+    return <Badge className="gap-1 bg-emerald-600 text-white hover:bg-emerald-600"><CheckCircle2 className="size-3" />赛果命中</Badge>;
+  }
+  if (item.outcomeHit === false) {
+    return <Badge className="gap-1 bg-red-600 text-white hover:bg-red-600"><XCircle className="size-3" />赛果未中</Badge>;
+  }
+  return <Badge variant="outline">待赛果核对</Badge>;
+}
+
+function OutcomeRibbon({ item }: { item: PredictionListItem }) {
+  const state = item.outcomeHit === true ? "hit" : item.outcomeHit === false ? "miss" : "pending";
+  const label = state === "hit" ? "命中" : state === "miss" ? "未中" : "待核对";
+  const Icon = state === "hit" ? CheckCircle2 : state === "miss" ? XCircle : null;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex h-7 min-w-[84px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-semibold",
+        state === "hit" && "border-emerald-700 bg-emerald-600 text-white",
+        state === "miss" && "border-red-700 bg-red-600 text-white",
+        state === "pending" && "border-border bg-muted text-muted-foreground",
+      )}
+    >
+      {Icon ? <Icon className="size-3.5" /> : null}
+      {label}
+    </span>
+  );
 }
 
 function ScorePanel({
@@ -68,6 +107,7 @@ function DetailDrawerContent({ item }: { item: PredictionListItem }) {
     item.actualHomeScore !== null && item.actualHomeScore !== undefined && item.actualAwayScore !== null && item.actualAwayScore !== undefined
       ? `${item.actualHomeScore}-${item.actualAwayScore}`
       : "---";
+  const actualOutcome = item.actualOutcome ? formatPredictionOutcome(item.actualOutcome) : "---";
 
   return (
     <SheetContent className="w-[min(94vw,720px)] gap-0 overflow-y-auto p-0 sm:max-w-none">
@@ -81,6 +121,7 @@ function DetailDrawerContent({ item }: { item: PredictionListItem }) {
       <div className="space-y-4 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2">
+            <OutcomeBadge item={item} />
             <ScoreBadge item={item} />
             <Badge variant="outline">{formatPredictionConfidence(item.confidence)}</Badge>
             <Badge variant="outline">{formatPredictionDataMode(item.dataMode)}</Badge>
@@ -103,6 +144,17 @@ function DetailDrawerContent({ item }: { item: PredictionListItem }) {
           <ScorePanel
             label="真实比分"
             score={actualScore}
+          />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ScorePanel
+            label="预测赛果"
+            score={formatPredictionOutcome(item.predictedOutcome)}
+          />
+          <ScorePanel
+            label="真实赛果"
+            score={actualOutcome}
           />
         </div>
 
@@ -148,11 +200,12 @@ export function PredictionListDrawer({ items }: { items: PredictionListItem[] })
       </CardHeader>
       <CardContent>
         <div className="overflow-hidden rounded-md border">
-          <div className="grid grid-cols-[minmax(180px,1.5fr)_88px_88px_96px_40px] gap-3 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground max-md:hidden">
+          <div className="grid grid-cols-[minmax(180px,1.5fr)_88px_88px_88px_104px_40px] gap-3 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground max-md:hidden">
             <div>比赛</div>
-            <div>预测</div>
+            <div>预测比分</div>
+            <div>预测赛果</div>
             <div>真实</div>
-            <div>状态</div>
+            <div>命中</div>
             <div className="sr-only">操作</div>
           </div>
 
@@ -167,7 +220,7 @@ export function PredictionListDrawer({ items }: { items: PredictionListItem[] })
                 <SheetTrigger asChild>
                   <button
                     type="button"
-                    className="grid w-full grid-cols-[1fr_auto] items-center gap-3 border-b px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(180px,1.5fr)_88px_88px_96px_40px]"
+                    className="grid w-full grid-cols-[1fr_auto] items-center gap-3 border-b px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(180px,1.5fr)_88px_88px_88px_104px_40px]"
                   >
                     <div className="min-w-0">
                       <div className="truncate font-medium">{item.matchTitle}</div>
@@ -178,13 +231,18 @@ export function PredictionListDrawer({ items }: { items: PredictionListItem[] })
                     <div className="hidden font-mono text-sm md:block">
                       {item.predictedHomeScore}-{item.predictedAwayScore}
                     </div>
+                    <div className="hidden text-sm md:block">{formatPredictionOutcome(item.predictedOutcome)}</div>
                     <div className="hidden font-mono text-sm md:block">{actualScore}</div>
                     <div className="hidden md:block">
-                      <Badge variant="outline">{formatPredictionStatus(item.status)}</Badge>
+                      <OutcomeRibbon item={item} />
                     </div>
                     <div className="flex items-center justify-end gap-2">
-                      <span className="font-mono text-sm md:hidden">
-                        {item.predictedHomeScore}-{item.predictedAwayScore}
+                      <span className="flex flex-col items-end gap-1 text-right text-sm md:hidden">
+                        <span className="font-mono">{item.predictedHomeScore}-{item.predictedAwayScore}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {formatPredictionOutcome(item.predictedOutcome)} · {formatPredictionStatus(item.status)}
+                        </span>
+                        <OutcomeRibbon item={item} />
                       </span>
                       <ChevronRight className="size-4 text-muted-foreground" />
                     </div>
