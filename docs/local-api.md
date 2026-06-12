@@ -107,6 +107,17 @@ Codex 分析输出契约参见 [docs/codex-analysis-contract.md](/Users/zhuguido
 
 默认同样先传 `dryRun: true`。确认无误后去掉 `dryRun`，系统才扣款并生成真实注单。
 
+聊天窗口里由 Codex 代操作时，优先使用本地脚本包装这个接口的同一套逻辑：
+
+```bash
+pnpm record:placed-bet -- --input payload.json
+pnpm record:placed-bet -- --input payload.json --write
+```
+
+默认不加 `--write` 时只预览，不写库。只有你确认后才加 `--write`。
+
+单关可以直接传顶层比赛和盘口字段：
+
 ```json
 {
   "dryRun": true,
@@ -125,6 +136,41 @@ Codex 分析输出契约参见 [docs/codex-analysis-contract.md](/Users/zhuguido
   "sourceText": "示例截图：RMB 50 单注，下半场，进球最多的半场，墨西哥 vs 南非，赔率 2.01，赢取 100.50。"
 }
 ```
+
+串关传 `mode: "parlay"` 和 `legs[]`。父级 `finalOdds` 可以省略，系统会用每条 leg 的欧盘赔率相乘；如果平台成功页显示了总赔率，也可以把总赔率放在父级 `finalOdds`。写入后 `bet_slips.final_odds` 存整张串关总赔率，`bet_slip_legs.final_odds` 存每条 leg 自己的赔率。
+
+```json
+{
+  "dryRun": true,
+  "portfolioId": "user",
+  "decisionBy": "user",
+  "mode": "parlay",
+  "market": "parlay",
+  "stake": 50,
+  "platformAccountId": "betway-main",
+  "executionMethod": "user_manual",
+  "confirmationRef": "2606121327375036",
+  "sourceText": "Betway 投注成功：2串1，上半场大小小0.5，加拿大 vs 波黑 @2.53，美国 vs 巴拉圭 @2.44，总投注 50，可赢 258.66。",
+  "legs": [
+    {
+      "matchText": "加拿大 vs 波黑",
+      "market": "half_time:total",
+      "selection": "under",
+      "line": "0.5",
+      "finalOdds": 2.53
+    },
+    {
+      "matchText": "美国 vs 巴拉圭",
+      "market": "half_time:total",
+      "selection": "under",
+      "line": "0.5",
+      "finalOdds": 2.44
+    }
+  ]
+}
+```
+
+注意：部分平台的“可赢金额”只显示盈利，不含本金。系统的 `potentialReturnCents` 记录返还总额，等于 `stake * finalOdds`，不是只记录盈利。
 
 如果不是世界杯赛程库里的比赛，可以不传 `matchId`，改传 `matchText`：
 

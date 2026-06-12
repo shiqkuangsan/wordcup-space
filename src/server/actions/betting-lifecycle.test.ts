@@ -498,6 +498,95 @@ describe("betting lifecycle actions", () => {
     expect(userPortfolio?.allocatedBalanceCents).toBe(95000);
   });
 
+  it("records a placed parlay screenshot with parent total odds and per-leg odds", async () => {
+    const canadaBosnia = await createMatch({
+      stage: "小组赛",
+      homeTeam: "加拿大",
+      awayTeam: "波黑",
+      kickoffAt: "2026-06-13T03:00:00+08:00",
+    });
+    const usaParaguay = await createMatch({
+      stage: "小组赛",
+      homeTeam: "美国",
+      awayTeam: "巴拉圭",
+      kickoffAt: "2026-06-13T09:00:00+08:00",
+    });
+    const screenshotDraft = {
+      portfolioId: "user",
+      decisionBy: "user",
+      mode: "parlay",
+      market: "parlay",
+      stake: 50,
+      platformAccountId: "betway-main",
+      executionMethod: "user_manual",
+      confirmationRef: "2606121327375036",
+      sourceText: "Betway 投注成功：2串1，上半场大小小0.5，加拿大 vs 波黑 @2.53，美国 vs 巴拉圭 @2.44，总投注 50，可赢 258.66。",
+      legs: [
+        {
+          matchId: canadaBosnia.id,
+          market: "half_time:total",
+          selection: "under",
+          line: "0.5",
+          finalOdds: 2.53,
+        },
+        {
+          matchId: usaParaguay.id,
+          market: "half_time:total",
+          selection: "under",
+          line: "0.5",
+          finalOdds: 2.44,
+        },
+      ],
+    };
+
+    const preview = await postPlacedBet(jsonRequest("/api/placed-bets", {
+      ...screenshotDraft,
+      dryRun: true,
+    }));
+    const previewJson = await preview.json();
+
+    expect(previewJson.ok).toBe(true);
+    expect(previewJson.data.writes).toBe(false);
+    expect(previewJson.data.canCreate).toBe(true);
+    expect(previewJson.data.slip.finalOdds).toBeCloseTo(6.1732);
+    expect(previewJson.data.slip.potentialReturnCents).toBe(30866);
+    expect(previewJson.data.legs.map((leg: { finalOdds: number }) => leg.finalOdds)).toEqual([2.53, 2.44]);
+    expect(rowCount(betIntents)).toBe(0);
+    expect(rowCount(betSlips)).toBe(0);
+
+    const created = await postPlacedBet(jsonRequest("/api/placed-bets", screenshotDraft));
+    const createdJson = await created.json();
+
+    expect(createdJson.ok).toBe(true);
+    expect(rowCount(betIntents)).toBe(1);
+    expect(rowCount(betIntentLegs)).toBe(2);
+    expect(rowCount(executionAttempts)).toBe(1);
+    expect(rowCount(betSlips)).toBe(1);
+    expect(rowCount(betSlipLegs)).toBe(2);
+    expect(rowCount(portfolioLedgerEntries)).toBe(1);
+
+    const slip = getDb().select().from(betSlips).where(eq(betSlips.confirmationRef, "2606121327375036")).get();
+    expect(slip?.mode).toBe("parlay");
+    expect(slip?.finalOdds).toBeCloseTo(6.1732);
+    expect(slip?.potentialReturnCents).toBe(30866);
+
+    const slipLegs = getDb()
+      .select()
+      .from(betSlipLegs)
+      .where(eq(betSlipLegs.betSlipId, slip?.id ?? ""))
+      .all()
+      .sort((left, right) => left.legOrder - right.legOrder);
+    expect(slipLegs.map((leg) => leg.finalOdds)).toEqual([2.53, 2.44]);
+    expect(slipLegs.map((leg) => leg.matchId)).toEqual([canadaBosnia.id, usaParaguay.id]);
+
+    const userPortfolio = getDb()
+      .select()
+      .from(portfolios)
+      .where(eq(portfolios.id, "user"))
+      .get();
+    expect(userPortfolio?.allocatedBalanceCents).toBe(95000);
+  });
+
   it("supports Hong Kong odds and text-only non-World-Cup matches", async () => {
     const draft = {
       portfolioId: "user",

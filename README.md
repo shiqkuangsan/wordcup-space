@@ -38,6 +38,8 @@
 
 口述、截图和下注凭证交给 Codex 处理的格式参见 [docs/codex-capture-guide.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/codex-capture-guide.md:1)。
 
+聊天窗口是默认录入入口；页面表单只是备用。Codex 代操作已成交注单时，先用 `pnpm record:placed-bet` dry-run，得到你确认后才加 `--write` 写库。
+
 外部 provider 与 Codex 工作流接入参见 [docs/provider-agent-integration.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/provider-agent-integration.md:1)。
 
 关键默认值：

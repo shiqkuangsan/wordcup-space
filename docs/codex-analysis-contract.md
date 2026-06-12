@@ -135,7 +135,7 @@ POST /api/intents
 | 确认号 | `confirmationRef` 必须来自平台成功页；用于后续去重和核对。 |
 | 截图 | 有截图时保存 `confirmationScreenshotPath`，便于赛后复盘。 |
 
-若 API 当前无法完整表达单腿最终赔率，记录后必须立刻核对并修正 `bet_slip_legs`，同时保留父级 slip 的总赔率和潜在返还不变。
+`POST /api/placed-bets` 支持 `legs[]` 直录串关注单。串关写入后必须用注单号核对：父级 slip 的总赔率、总 stake、潜在返还正确，且每条 `bet_slip_legs.final_odds` 仍是单腿赔率。
 
 ## 解释规则
 

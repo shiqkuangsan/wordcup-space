@@ -41,6 +41,11 @@ function positiveNumber(value: unknown, name: string) {
   return numberValue;
 }
 
+function optionalPositiveNumber(value: unknown, name: string) {
+  if (value === undefined || value === null || value === "") return undefined;
+  return positiveNumber(value, name);
+}
+
 function requiredString(value: unknown, name: string) {
   const stringValue = String(value ?? "").trim();
   if (!stringValue) {
@@ -55,9 +60,26 @@ function optionalString(value: unknown) {
   return stringValue || undefined;
 }
 
-function resolveMatch(body: Body) {
+function getField(leg: Body, fallback: Body, name: string) {
+  return leg[name] ?? fallback[name];
+}
+
+function getLegBodies(body: Body) {
+  if (!Array.isArray(body.legs)) return [body];
+  if (body.legs.length === 0) throw new Error("legs must not be empty");
+
+  return body.legs.map((leg, index) => {
+    if (!leg || typeof leg !== "object" || Array.isArray(leg)) {
+      throw new Error(`legs[${index}] must be an object`);
+    }
+
+    return leg as Body;
+  });
+}
+
+function resolveMatch(leg: Body, fallback: Body) {
   const db = getDb();
-  const matchId = optionalString(body.matchId);
+  const matchId = optionalString(getField(leg, fallback, "matchId"));
 
   if (matchId) {
     const match = db.select().from(matches).where(eq(matches.id, matchId)).get();
@@ -68,7 +90,7 @@ function resolveMatch(body: Body) {
     };
   }
 
-  const matchText = optionalString(body.matchText);
+  const matchText = optionalString(getField(leg, fallback, "matchText"));
   if (matchText) {
     return {
       match: undefined,
@@ -76,8 +98,8 @@ function resolveMatch(body: Body) {
     };
   }
 
-  const homeTeam = optionalString(body.homeTeam);
-  const awayTeam = optionalString(body.awayTeam);
+  const homeTeam = optionalString(getField(leg, fallback, "homeTeam"));
+  const awayTeam = optionalString(getField(leg, fallback, "awayTeam"));
   if (!homeTeam || !awayTeam) {
     throw new Error("matchId, matchText or homeTeam/awayTeam is required");
   }
@@ -106,30 +128,90 @@ function resolveMatch(body: Body) {
   };
 }
 
+function normalizeLegs(body: Body) {
+  return getLegBodies(body).map((leg, index) => {
+    const resolvedMatch = resolveMatch(leg, body);
+    const oddsFormat = normalizeOddsFormat(getField(leg, body, "oddsFormat"));
+    const rawFinalOdds = positiveNumber(
+      leg.rawOdds ?? leg.finalOdds ?? leg.odds ?? leg.intendedOdds,
+      `legs[${index}].finalOdds`,
+    );
+    const rawIntendedOdds = positiveNumber(
+      leg.rawIntendedOdds ?? leg.intendedOdds ?? leg.observedOdds ?? rawFinalOdds,
+      `legs[${index}].intendedOdds`,
+    );
+    const rawObservedOdds = positiveNumber(
+      leg.rawObservedOdds ?? leg.observedOdds ?? rawFinalOdds,
+      `legs[${index}].observedOdds`,
+    );
+
+    return {
+      match: resolvedMatch.match,
+      matchText: resolvedMatch.matchText,
+      market: requiredString(getField(leg, body, "market"), `legs[${index}].market`),
+      selection: requiredString(getField(leg, body, "selection"), `legs[${index}].selection`),
+      line: optionalString(getField(leg, body, "line")),
+      intendedOdds: toDecimalOdds(rawIntendedOdds, oddsFormat),
+      observedOdds: toDecimalOdds(rawObservedOdds, oddsFormat),
+      finalOdds: toDecimalOdds(rawFinalOdds, oddsFormat),
+      oddsFormat,
+      rawOdds: rawFinalOdds,
+      rawObservedOdds,
+      legOrder: Number(leg.legOrder ?? index + 1),
+      notes: optionalString(leg.notes ?? body.sourceText),
+    };
+  });
+}
+
+function multiplyOdds(values: number[]) {
+  return values.reduce((total, odds) => total * odds, 1);
+}
+
+function normalizeActor(value: unknown, name: string) {
+  const actor = requiredString(value, name);
+  if (!["user", "codex"].includes(actor)) throw new Error(`${name} must be user or codex`);
+  return actor as "user" | "codex";
+}
+
 function normalizePlacedBet(body: Body) {
   const db = getDb();
-  const resolvedMatch = resolveMatch(body);
-  const portfolioId = requiredString(body.portfolioId ?? "user", "portfolioId");
-  const decisionBy = requiredString(body.decisionBy ?? portfolioId, "decisionBy");
+  const legs = normalizeLegs(body);
+  const portfolioId = normalizeActor(body.portfolioId ?? "user", "portfolioId");
+  const decisionBy = normalizeActor(body.decisionBy ?? portfolioId, "decisionBy");
+  const placedBy = normalizeActor(body.placedBy ?? "user", "placedBy");
   const platformAccountId = requiredString(body.platformAccountId, "platformAccountId");
   const stakeCents = centsFromBody(body);
   const oddsFormat = normalizeOddsFormat(body.oddsFormat);
-  const rawOdds = positiveNumber(body.rawOdds ?? body.finalOdds ?? body.odds, "rawOdds");
-  const finalOdds = toDecimalOdds(rawOdds, oddsFormat);
-  const rawIntendedOdds = positiveNumber(body.rawIntendedOdds ?? body.intendedOdds ?? body.observedOdds ?? rawOdds, "rawIntendedOdds");
-  const rawObservedOdds = positiveNumber(body.rawObservedOdds ?? body.observedOdds ?? rawOdds, "rawObservedOdds");
-  const intendedOdds = toDecimalOdds(rawIntendedOdds, oddsFormat);
-  const observedOdds = toDecimalOdds(rawObservedOdds, oddsFormat);
-  const market = requiredString(body.market, "market");
-  const selection = requiredString(body.selection, "selection");
+  const mode = String(body.mode ?? (legs.length > 1 ? "parlay" : "single")) as "single" | "parlay";
+  const rawTotalOdds = optionalPositiveNumber(
+    body.rawOdds ?? body.finalOdds ?? body.odds,
+    "finalOdds",
+  );
+  const finalOdds = rawTotalOdds
+    ? toDecimalOdds(rawTotalOdds, oddsFormat)
+    : multiplyOdds(legs.map((leg) => leg.finalOdds));
+  const rawIntendedTotalOdds = optionalPositiveNumber(
+    body.rawIntendedOdds ?? body.intendedTotalOdds ?? body.intendedOdds,
+    "intendedTotalOdds",
+  );
+  const intendedOdds = rawIntendedTotalOdds
+    ? toDecimalOdds(rawIntendedTotalOdds, oddsFormat)
+    : multiplyOdds(legs.map((leg) => leg.intendedOdds));
+  const rawObservedTotalOdds = optionalPositiveNumber(
+    body.rawObservedOdds ?? body.observedOdds,
+    "observedOdds",
+  );
+  const observedOdds = rawObservedTotalOdds
+    ? toDecimalOdds(rawObservedTotalOdds, oddsFormat)
+    : multiplyOdds(legs.map((leg) => leg.observedOdds));
+  const rawObservedOdds = rawObservedTotalOdds ?? observedOdds;
+  const market = optionalString(body.market) ?? (mode === "parlay" ? "parlay" : legs[0].market);
   const confirmationRef = optionalString(body.confirmationRef);
   const portfolio = db.select().from(portfolios).where(eq(portfolios.id, portfolioId)).get();
   const platformAccount = db.select().from(platformAccounts).where(eq(platformAccounts.id, platformAccountId)).get();
 
   if (!portfolio) throw new Error(`portfolio not found: ${portfolioId}`);
   if (!platformAccount) throw new Error(`platform account not found: ${platformAccountId}`);
-  if (!["user", "codex"].includes(portfolioId)) throw new Error("portfolioId must be user or codex");
-  if (!["user", "codex"].includes(decisionBy)) throw new Error("decisionBy must be user or codex");
 
   const existingSlip = confirmationRef
     ? db.select().from(betSlips).where(eq(betSlips.confirmationRef, confirmationRef)).get()
@@ -145,27 +227,30 @@ function normalizePlacedBet(body: Body) {
   });
   const warnings: string[] = [];
 
+  if (!["single", "parlay"].includes(mode)) warnings.push("mode 必须是 single 或 parlay。");
+  if (mode === "single" && legs.length > 1) warnings.push("多腿注单必须使用 parlay mode。");
+  if (mode === "parlay" && legs.length < 2) warnings.push("串关注单至少需要 2 条 legs。");
   if (existingSlip) warnings.push("注单号已存在，请确认不是重复录入。");
   if (balanceAfterCents < 0) warnings.push("余额不足，不能写入真实成交注单。");
   if (oddsChangePct >= oddsTolerancePct) warnings.push("观察赔率与最终赔率变化达到或超过容忍区间。");
   if (!confirmationRef) warnings.push("缺少注单号/确认号，后续去重和核对会变困难。");
 
   return {
-    match: resolvedMatch.match,
-    matchText: resolvedMatch.matchText,
+    match: legs[0].match,
+    matchText: legs[0].matchText,
+    legs,
     portfolio,
     platformAccount,
     draft: {
-      portfolioId: portfolioId as "user" | "codex",
-      decisionBy: decisionBy as "user" | "codex",
-      mode: String(body.mode ?? "single") as "single" | "parlay",
+      portfolioId,
+      decisionBy,
+      placedBy,
+      mode,
       market,
-      selection,
-      line: optionalString(body.line),
       stakeCents,
       finalOdds,
       oddsFormat,
-      rawOdds,
+      rawOdds: rawTotalOdds ?? finalOdds,
       intendedOdds,
       observedOdds,
       rawObservedOdds,
@@ -190,6 +275,18 @@ function normalizePlacedBet(body: Body) {
 
 export function buildPlacedBetPreview(body: Body) {
   const normalized = normalizePlacedBet(body);
+  const previewLegs = normalized.legs.map((leg) => ({
+    matchId: leg.match?.id,
+    matchText: leg.matchText,
+    market: leg.market,
+    selection: leg.selection,
+    line: leg.line,
+    intendedOdds: leg.intendedOdds,
+    finalOdds: leg.finalOdds,
+    oddsFormat: leg.oddsFormat,
+    rawOdds: leg.rawOdds,
+    legOrder: leg.legOrder,
+  }));
 
   return {
     dryRun: true,
@@ -201,6 +298,12 @@ export function buildPlacedBetPreview(body: Body) {
       kickoffAt: normalized.match?.kickoffAt,
       status: normalized.match?.status,
     },
+    matches: normalized.legs.map((leg) => ({
+      id: leg.match?.id,
+      title: leg.matchText,
+      kickoffAt: leg.match?.kickoffAt,
+      status: leg.match?.status,
+    })),
     intent: {
       portfolioId: normalized.draft.portfolioId,
       decisionBy: normalized.draft.decisionBy,
@@ -213,20 +316,12 @@ export function buildPlacedBetPreview(body: Body) {
       rationale: normalized.draft.rationale,
       status: "executed",
     },
-    leg: {
-      matchId: normalized.match?.id,
-      matchText: normalized.matchText,
-      market: normalized.draft.market,
-      selection: normalized.draft.selection,
-      line: normalized.draft.line,
-      intendedOdds: normalized.draft.intendedOdds,
-      finalOdds: normalized.draft.finalOdds,
-      oddsFormat: normalized.draft.oddsFormat,
-      rawOdds: normalized.draft.rawOdds,
-    },
+    leg: previewLegs[0],
+    legs: previewLegs,
     slip: {
       portfolioId: normalized.draft.portfolioId,
       decisionBy: normalized.draft.decisionBy,
+      placedBy: normalized.draft.placedBy,
       mode: normalized.draft.mode,
       stakeCents: normalized.draft.stakeCents,
       finalOdds: normalized.draft.finalOdds,
@@ -271,18 +366,18 @@ export function createPlacedBetFromDraft(body: Body) {
       approvalMode: "auto",
       rationale: normalized.draft.rationale,
     };
-    const intentLeg = {
+    const intentLegs = normalized.legs.map((leg) => ({
       id: createId("intent-leg"),
       betIntentId: intent.id,
-      matchId: normalized.match?.id,
-      matchText: normalized.matchText,
-      market: normalized.draft.market,
-      selection: normalized.draft.selection,
-      line: normalized.draft.line,
-      intendedOdds: normalized.draft.intendedOdds,
-      legOrder: 1,
-      notes: normalized.draft.sourceText,
-    };
+      matchId: leg.match?.id,
+      matchText: leg.matchText,
+      market: leg.market,
+      selection: leg.selection,
+      line: leg.line,
+      intendedOdds: leg.intendedOdds,
+      legOrder: leg.legOrder,
+      notes: leg.notes,
+    }));
     const attempt = {
       id: createId("attempt"),
       betIntentId: intent.id,
@@ -306,7 +401,7 @@ export function createPlacedBetFromDraft(body: Body) {
       platformAccountId: normalized.platformAccount.id,
       portfolioId: normalized.draft.portfolioId,
       decisionBy: normalized.draft.decisionBy,
-      placedBy: "user",
+      placedBy: normalized.draft.placedBy,
       isRealMoney: normalized.draft.isRealMoney,
       mode: normalized.draft.mode,
       stakeCents: normalized.draft.stakeCents,
@@ -319,27 +414,27 @@ export function createPlacedBetFromDraft(body: Body) {
       status: "open",
       placedAt: normalized.draft.placedAt,
     };
-    const slipLeg = {
+    const slipLegs = normalized.legs.map((leg) => ({
       id: createId("slip-leg"),
       betSlipId: slip.id,
-      matchId: normalized.match?.id,
-      matchText: normalized.matchText,
-      market: normalized.draft.market,
-      selection: normalized.draft.selection,
-      line: normalized.draft.line,
-      finalOdds: normalized.draft.finalOdds,
-      oddsFormat: normalized.draft.oddsFormat,
-      rawOdds: normalized.draft.rawOdds,
+      matchId: leg.match?.id,
+      matchText: leg.matchText,
+      market: leg.market,
+      selection: leg.selection,
+      line: leg.line,
+      finalOdds: leg.finalOdds,
+      oddsFormat: leg.oddsFormat,
+      rawOdds: leg.rawOdds,
       status: "open",
-      legOrder: 1,
-      notes: normalized.draft.sourceText,
-    };
+      legOrder: leg.legOrder,
+      notes: leg.notes,
+    }));
 
     tx.insert(betIntents).values(intent).run();
-    tx.insert(betIntentLegs).values(intentLeg).run();
+    for (const leg of intentLegs) tx.insert(betIntentLegs).values(leg).run();
     tx.insert(executionAttempts).values(attempt).run();
     tx.insert(betSlips).values(slip).run();
-    tx.insert(betSlipLegs).values(slipLeg).run();
+    for (const leg of slipLegs) tx.insert(betSlipLegs).values(leg).run();
     tx.update(portfolios)
       .set({
         allocatedBalanceCents: normalized.draft.balanceAfterCents,
@@ -362,6 +457,14 @@ export function createPlacedBetFromDraft(body: Body) {
       })
       .run();
 
-    return { intent, intentLeg, attempt, slip, slipLeg };
+    return {
+      intent,
+      intentLeg: intentLegs[0],
+      intentLegs,
+      attempt,
+      slip,
+      slipLeg: slipLegs[0],
+      slipLegs,
+    };
   });
 }

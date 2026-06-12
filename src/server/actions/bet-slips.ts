@@ -98,6 +98,8 @@ export async function createBetSlipFromAttempt(
       .all();
 
     for (const leg of intentLegs) {
+      const legFinalOdds = intentLegs.length === 1 ? data.finalOdds : leg.intendedOdds;
+
       tx.insert(betSlipLegs)
         .values({
           id: createId("slip-leg"),
@@ -107,9 +109,9 @@ export async function createBetSlipFromAttempt(
           market: leg.market,
           selection: leg.selection,
           line: leg.line,
-          finalOdds: data.finalOdds,
+          finalOdds: legFinalOdds,
           oddsFormat: data.oddsFormat,
-          rawOdds: data.rawOdds,
+          rawOdds: intentLegs.length === 1 ? data.rawOdds : legFinalOdds,
           status: "open",
           legOrder: leg.legOrder,
           notes: leg.notes,
