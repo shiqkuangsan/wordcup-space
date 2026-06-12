@@ -1,6 +1,7 @@
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db/client";
-import { betIntentLegs, betIntents } from "@/db/schema";
+import { betIntentLegs, betIntents, betSlips } from "@/db/schema";
 import { createId } from "@/server/actions/ids";
 
 const createBetIntentSchema = z.object({
@@ -31,6 +32,13 @@ const addBetIntentLegSchema = z.object({
   notes: z.string().optional(),
 });
 
+const closeBetIntentSchema = z.object({
+  id: z.string().min(1),
+  closedReason: z.enum(["expired_not_adopted", "user_cancelled", "execution_failed", "superseded"]),
+  closedNote: z.string().optional(),
+  supersededByIntentId: z.string().min(1).optional(),
+});
+
 export async function createBetIntent(input: z.input<typeof createBetIntentSchema>) {
   const data = createBetIntentSchema.parse(input);
   const row = { id: createId("intent"), ...data };
@@ -38,6 +46,43 @@ export async function createBetIntent(input: z.input<typeof createBetIntentSchem
   getDb().insert(betIntents).values(row).run();
 
   return row;
+}
+
+export async function closeBetIntent(input: z.input<typeof closeBetIntentSchema>) {
+  const data = closeBetIntentSchema.parse(input);
+  const db = getDb();
+  const intent = db.select().from(betIntents).where(eq(betIntents.id, data.id)).get();
+  if (!intent) throw new Error(`bet intent not found: ${data.id}`);
+  if (intent.status === "executed") throw new Error("executed bet intent cannot be closed without slip workflow");
+
+  const slip = db.select().from(betSlips).where(eq(betSlips.betIntentId, data.id)).get();
+  if (slip) throw new Error("bet intent already has a slip");
+
+  const closedAt = new Date().toISOString();
+  const status = data.closedReason === "expired_not_adopted" ? "expired" : "cancelled";
+  const closedNote = data.closedNote?.trim();
+
+  db.update(betIntents)
+    .set({
+      status,
+      closedAt,
+      closedReason: data.closedReason,
+      closedNote: closedNote || undefined,
+      supersededByIntentId: data.supersededByIntentId,
+      updatedAt: closedAt,
+    })
+    .where(eq(betIntents.id, data.id))
+    .run();
+
+  return {
+    ...intent,
+    status,
+    closedAt,
+    closedReason: data.closedReason,
+    closedNote: closedNote || undefined,
+    supersededByIntentId: data.supersededByIntentId,
+    updatedAt: closedAt,
+  };
 }
 
 export async function addBetIntentLeg(input: z.input<typeof addBetIntentLegSchema>) {

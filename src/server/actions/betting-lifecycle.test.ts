@@ -14,7 +14,7 @@ import { betIntentLegs, betIntents, betSlipLegs, betSlips, decisionReviews, exec
 import { createBetSlipFromAttempt } from "@/server/actions/bet-slips";
 import { recordDecisionReview } from "@/server/actions/decision-reviews";
 import { createExecutionAttempt, markExecutionAttempt } from "@/server/actions/execution-attempts";
-import { createBetIntent, addBetIntentLeg } from "@/server/actions/intents";
+import { createBetIntent, addBetIntentLeg, closeBetIntent } from "@/server/actions/intents";
 import { createMatch } from "@/server/actions/matches";
 import { settleBetSlip } from "@/server/actions/settlements";
 
@@ -108,6 +108,36 @@ afterEach(() => {
 });
 
 describe("betting lifecycle actions", () => {
+  it("closes an expired unplaced intent without changing bankroll", async () => {
+    const intent = await createBetIntent({
+      portfolioId: "codex",
+      decisionBy: "codex",
+      mode: "single",
+      market: "1X2",
+      intendedStakeCents: 10000,
+      intendedTotalOdds: 2,
+      riskTier: "normal",
+      confidence: "medium",
+      rationale: "过期 intent 需要收口。",
+      expiresAt: "2026-06-10T10:00:00.000Z",
+    });
+
+    const closed = await closeBetIntent({
+      id: intent.id,
+      closedReason: "expired_not_adopted",
+      closedNote: "赔率窗口已过，未采纳。",
+    });
+    const stored = getDb().select().from(betIntents).where(eq(betIntents.id, intent.id)).get();
+
+    expect(closed.status).toBe("expired");
+    expect(stored?.status).toBe("expired");
+    expect(stored?.closedReason).toBe("expired_not_adopted");
+    expect(stored?.closedNote).toBe("赔率窗口已过，未采纳。");
+    expect(stored?.closedAt).toBeTruthy();
+    expect(rowCount(betSlips)).toBe(0);
+    expect(codexBalance()).toBe(100000);
+  });
+
   it("blocks expired intents from creating bet slips", async () => {
     const intent = await createBetIntent({
       portfolioId: "codex",
@@ -237,6 +267,44 @@ describe("betting lifecycle actions", () => {
 
     expect(review.betSlipId).toBe(slip.id);
     expect(rowCount(decisionReviews)).toBe(1);
+  });
+
+  it("blocks closing an executed intent", async () => {
+    const intent = await createBetIntent({
+      portfolioId: "codex",
+      decisionBy: "codex",
+      mode: "single",
+      market: "1X2",
+      intendedStakeCents: 10000,
+      intendedTotalOdds: 2,
+      riskTier: "normal",
+      confidence: "medium",
+      rationale: "已成交 intent 不能按未采纳收口。",
+    });
+    const attempt = await createExecutionAttempt({
+      betIntentId: intent.id,
+      executionMethod: "user_manual",
+      platformAccountId: "betway-main",
+      intendedOdds: 2,
+      observedOdds: 2,
+    });
+    await markExecutionAttempt({
+      id: attempt.id,
+      status: "succeeded",
+      observedOdds: 2,
+    });
+    await createBetSlipFromAttempt({
+      executionAttemptId: attempt.id,
+      platformAccountId: "betway-main",
+      stakeCents: 10000,
+      finalOdds: 2,
+      confirmationRef: "closed-blocked-ticket",
+    });
+
+    await expect(closeBetIntent({
+      id: intent.id,
+      closedReason: "expired_not_adopted",
+    })).rejects.toThrow("executed bet intent cannot be closed");
   });
 
   it("blocks bet slip creation when odds movement reaches tolerance", async () => {

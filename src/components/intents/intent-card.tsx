@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { IntentClosePanel } from "@/components/intents/intent-close-panel";
 import { IntentExecutionPanel } from "@/components/intents/intent-execution-panel";
 import { getEffectiveIntentStatus } from "@/domain/bet-lifecycle";
 import { formatMarketLabel } from "@/domain/betting-markets";
@@ -38,6 +39,8 @@ export function IntentCard({
 }) {
   const effectiveStatus = getEffectiveIntentStatus(intent, now);
   const isStatusCorrected = effectiveStatus !== intent.status;
+  const canCloseWithoutSlip = betSlipCount === 0 && !["executed", "cancelled", "expired"].includes(intent.status);
+  const defaultCloseReason = failedAttemptCount > 0 ? "execution_failed" : effectiveStatus === "expired" ? "expired_not_adopted" : "user_cancelled";
   const potentialReturnCents = Math.round(intent.intendedStakeCents * intent.intendedTotalOdds);
   const firstLinkedLeg = legs.find((leg) => leg.matchHref);
 
@@ -156,6 +159,9 @@ export function IntentCard({
             ) : null}
             <p className="text-sm text-muted-foreground">{intent.rationale}</p>
             <IntentExecutionPanel intent={intent} platformAccounts={platformAccounts} />
+            {canCloseWithoutSlip ? (
+              <IntentClosePanel intentId={intent.id} defaultReason={defaultCloseReason} />
+            ) : null}
           </div>
         </details>
       </CardContent>

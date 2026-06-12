@@ -75,7 +75,7 @@ function buildQueueItem({
           ? "执行失败，保留原因用于复盘"
           : "未采纳或已关闭"
         : effectiveStatus === "expired"
-          ? "已过窗口，取消或重建"
+          ? "已过窗口，需收口"
           : failedAttemptCount > 0
             ? "曾失败，可重试或取消"
             : "核对盘口后执行";

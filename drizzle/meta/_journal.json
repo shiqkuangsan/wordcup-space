@@ -43,6 +43,13 @@
       "when": 1781227865042,
       "tag": "0005_curly_morlocks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1781278436463,
+      "tag": "0006_steady_absorbing_man",
+      "breakpoints": true
     }
   ]
 }
