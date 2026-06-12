@@ -21,12 +21,18 @@ export function IntentCard({
   intent,
   legs,
   betSlipCount = 0,
+  attemptCount = 0,
+  failedAttemptCount = 0,
+  actionHint,
   platformAccounts,
   now = new Date(),
 }: {
   intent: Intent;
   legs: IntentLeg[];
   betSlipCount?: number;
+  attemptCount?: number;
+  failedAttemptCount?: number;
+  actionHint?: string;
   platformAccounts: PlatformAccount[];
   now?: Date;
 }) {
@@ -46,6 +52,7 @@ export function IntentCard({
               <Badge variant={effectiveStatus === "expired" ? "destructive" : "outline"}>
                 {formatIntentStatus(effectiveStatus)}
               </Badge>
+              {actionHint ? <Badge variant="secondary">{actionHint}</Badge> : null}
               {isStatusCorrected ? <Badge variant="outline">状态待归档</Badge> : null}
             </div>
             <div className="mt-1 truncate font-mono text-xs font-normal text-muted-foreground">{intent.id}</div>
@@ -113,7 +120,7 @@ export function IntentCard({
         <div className="grid gap-2 text-xs text-muted-foreground md:grid-cols-4">
           <div>创建：{formatLocalMinute(intent.createdAt)}</div>
           <div>过期：{intent.expiresAt ? formatLocalMinute(intent.expiresAt) : "未设置"}</div>
-          <div>状态字段：{formatIntentStatus(intent.status)}</div>
+          <div>尝试：{attemptCount} 次{failedAttemptCount > 0 ? ` / 失败 ${failedAttemptCount}` : ""}</div>
           <div>注单：{betSlipCount} 张</div>
         </div>
         <details className="group rounded-md border bg-muted/20 px-3 py-2">

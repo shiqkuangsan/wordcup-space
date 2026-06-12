@@ -13,9 +13,10 @@ export function ThemeToggle() {
       aria-label="切换主题"
       size="icon"
       variant="ghost"
+      className="hover:border-border hover:bg-muted hover:text-foreground hover:shadow-sm"
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
-      <SunMoon className="size-4" />
+      <SunMoon className="size-4 transition-transform group-hover/button:rotate-12" />
     </Button>
   );
 }

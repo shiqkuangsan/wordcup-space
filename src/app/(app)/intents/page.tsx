@@ -1,11 +1,11 @@
 import { desc, eq } from "drizzle-orm";
-import Link from "next/link";
 import { ListFilterForm } from "@/components/filters/list-filter-form";
 import { CodexReplayPanel } from "@/components/intents/codex-replay-panel";
 import { IntentCard } from "@/components/intents/intent-card";
 import { IntentForm } from "@/components/intents/intent-form";
+import { QueueViewTabs } from "@/components/intents/queue-view-tabs";
 import { getDb } from "@/db/client";
-import { betIntentLegs, betIntents, betSlips, matches, platformAccounts } from "@/db/schema";
+import { betIntentLegs, betIntents, betSlips, executionAttempts, matches, platformAccounts } from "@/db/schema";
 import { getEffectiveIntentStatus, isIntentExecutable } from "@/domain/bet-lifecycle";
 import { formatMarketLabel } from "@/domain/betting-markets";
 import { formatLocalMinute } from "@/domain/dates";
@@ -21,16 +21,21 @@ type IntentRow = typeof betIntents.$inferSelect;
 type IntentLegRow = typeof betIntentLegs.$inferSelect;
 type MatchRow = typeof matches.$inferSelect;
 type PlatformAccountRow = typeof platformAccounts.$inferSelect;
+type ExecutionAttemptRow = typeof executionAttempts.$inferSelect;
 
-type QueueBucket = "active" | "expired" | "archived";
-type IntentView = "todo" | "replay" | "active" | "expired" | "archived" | "all";
+type QueueBucket = "needs_action" | "executed" | "closed_without_slip";
+type IntentView = "pending" | "executed" | "missed" | "replay" | "all";
 
 type IntentQueueItem = {
   intent: IntentRow;
   legs: Array<IntentLegRow & { matchHref?: string; matchTitle?: string }>;
   betSlipCount: number;
+  attemptCount: number;
+  failedAttemptCount: number;
+  latestAttemptStatus?: string;
   effectiveStatus: string;
   bucket: QueueBucket;
+  actionHint: string;
   expiresAtMs: number | null;
   createdAtMs: number;
 };
@@ -46,20 +51,34 @@ function buildQueueItem({
   legs,
   matchesById,
   betSlipCount,
+  attempts,
   now,
 }: {
   intent: IntentRow;
   legs: IntentLegRow[];
   matchesById: Map<string, MatchRow>;
   betSlipCount: number;
+  attempts: ExecutionAttemptRow[];
   now: Date;
 }): IntentQueueItem {
   const effectiveStatus = getEffectiveIntentStatus(intent, now);
-  const bucket: QueueBucket = isIntentExecutable(intent, now)
-    ? "active"
-    : effectiveStatus === "expired" && intent.status !== "executed" && intent.status !== "cancelled"
-      ? "expired"
-      : "archived";
+  const hasSlip = betSlipCount > 0 || intent.status === "executed";
+  const stillNeedsDecision = !hasSlip && (isIntentExecutable(intent, now) || (effectiveStatus === "expired" && intent.status !== "cancelled" && intent.status !== "expired"));
+  const failedAttemptCount = attempts.filter((attempt) => ["failed", "cancelled"].includes(attempt.status)).length;
+  const latestAttempt = [...attempts].sort((a, b) => (getDateMs(b.createdAt) ?? 0) - (getDateMs(a.createdAt) ?? 0))[0];
+  const bucket: QueueBucket = hasSlip ? "executed" : stillNeedsDecision ? "needs_action" : "closed_without_slip";
+  const actionHint =
+    bucket === "executed"
+      ? "查看注单和后续结算"
+      : bucket === "closed_without_slip"
+        ? failedAttemptCount > 0
+          ? "执行失败，保留原因用于复盘"
+          : "未采纳或已关闭"
+        : effectiveStatus === "expired"
+          ? "已过窗口，取消或重建"
+          : failedAttemptCount > 0
+            ? "曾失败，可重试或取消"
+            : "核对盘口后执行";
 
   return {
     intent,
@@ -74,15 +93,21 @@ function buildQueueItem({
         };
       }),
     betSlipCount,
+    attemptCount: attempts.length,
+    failedAttemptCount,
+    latestAttemptStatus: latestAttempt?.status,
     effectiveStatus,
     bucket,
+    actionHint,
     expiresAtMs: getDateMs(intent.expiresAt),
     createdAtMs: getDateMs(intent.createdAt) ?? 0,
   };
 }
 
 function sortQueueItems(a: IntentQueueItem, b: IntentQueueItem) {
-  if (a.bucket === "active" && b.bucket === "active") {
+  if (a.bucket === "needs_action" && b.bucket === "needs_action") {
+    if (a.effectiveStatus === "expired" && b.effectiveStatus !== "expired") return 1;
+    if (a.effectiveStatus !== "expired" && b.effectiveStatus === "expired") return -1;
     const aExpiry = a.expiresAtMs ?? Number.POSITIVE_INFINITY;
     const bExpiry = b.expiresAtMs ?? Number.POSITIVE_INFINITY;
     if (aExpiry !== bExpiry) return aExpiry - bExpiry;
@@ -101,10 +126,12 @@ function QueueSummaryCell({ label, value, detail }: { label: string; value: stri
 }
 
 function getIntentView(value: string): IntentView {
-  if (["todo", "replay", "active", "expired", "archived", "all"].includes(value)) {
+  if (["pending", "executed", "missed", "replay", "all"].includes(value)) {
     return value as IntentView;
   }
-  return "todo";
+  if (["todo", "active", "expired"].includes(value)) return "pending";
+  if (value === "archived") return "all";
+  return "pending";
 }
 
 function getTabHref(params: SearchParamsRecord, view: IntentView) {
@@ -128,41 +155,22 @@ function QueueTabs({
   counts: Record<IntentView, number>;
 }) {
   const tabs: Array<{ value: IntentView; label: string; description: string }> = [
-    { value: "todo", label: "待办", description: "待执行 + 过期复核" },
-    { value: "replay", label: "复盘对比", description: "理论 vs 实际" },
-    { value: "active", label: "待执行", description: "仍在窗口内" },
-    { value: "expired", label: "过期", description: "需取消或重建" },
-    { value: "archived", label: "归档", description: "成交/取消历史" },
-    { value: "all", label: "全部", description: "完整列表" },
+    { value: "pending", label: "待处理", description: "下单、重试、取消或重建" },
+    { value: "executed", label: "已执行", description: "已生成注单" },
+    { value: "missed", label: "未采纳/失败", description: "未成交的最终记录" },
+    { value: "replay", label: "复盘", description: "Codex 理论 vs 实际" },
+    { value: "all", label: "全部", description: "搜索和审计" },
   ];
 
   return (
-    <nav aria-label="决策队列视图" className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
-      {tabs.map((tab) => {
-        const active = activeView === tab.value;
-
-        return (
-          <Link
-            key={tab.value}
-            href={getTabHref(params, tab.value)}
-            role="tab"
-            aria-selected={active}
-            className={[
-              "rounded-md border px-3 py-2 text-sm transition-colors",
-              active ? "border-foreground bg-foreground text-background" : "bg-background hover:border-foreground/40 hover:bg-muted/40",
-            ].join(" ")}
-          >
-            <span className="flex items-center justify-between gap-2">
-              <span className="font-medium">{tab.label}</span>
-              <span className={active ? "font-mono text-xs text-background/80" : "font-mono text-xs text-muted-foreground"}>{counts[tab.value]}</span>
-            </span>
-            <span className={active ? "mt-1 block text-xs text-background/75" : "mt-1 block text-xs text-muted-foreground"}>
-              {tab.description}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+    <QueueViewTabs
+      activeView={activeView}
+      tabs={tabs.map((tab) => ({
+        ...tab,
+        count: counts[tab.value],
+        href: getTabHref(params, tab.value),
+      }))}
+    />
   );
 }
 
@@ -197,6 +205,9 @@ function QueueSection({
             intent={item.intent}
             legs={item.legs}
             betSlipCount={item.betSlipCount}
+            attemptCount={item.attemptCount}
+            failedAttemptCount={item.failedAttemptCount}
+            actionHint={item.actionHint}
             platformAccounts={platformAccounts}
             now={now}
           />
@@ -229,9 +240,11 @@ export default async function IntentsPage({
   const allIntents = db.select().from(betIntents).orderBy(desc(betIntents.createdAt)).all();
   const allIntentLegs = db.select().from(betIntentLegs).all();
   const allBetSlips = db.select().from(betSlips).all();
+  const allExecutionAttempts = db.select().from(executionAttempts).all();
   const activePlatformAccounts = db.select().from(platformAccounts).where(eq(platformAccounts.isActive, true)).all();
   const matchesById = new Map(allMatches.map((match) => [match.id, match]));
   const legsByIntent = new Map<string, typeof allIntentLegs>();
+  const attemptsByIntent = new Map<string, typeof allExecutionAttempts>();
   const slipCountByIntent = new Map<string, number>();
 
   for (const leg of allIntentLegs) {
@@ -242,6 +255,12 @@ export default async function IntentsPage({
 
   for (const slip of allBetSlips) {
     slipCountByIntent.set(slip.betIntentId, (slipCountByIntent.get(slip.betIntentId) ?? 0) + 1);
+  }
+
+  for (const attempt of allExecutionAttempts) {
+    const existing = attemptsByIntent.get(attempt.betIntentId) ?? [];
+    existing.push(attempt);
+    attemptsByIntent.set(attempt.betIntentId, existing);
   }
 
   const filteredIntents = allIntents.filter((intent) => {
@@ -287,28 +306,29 @@ export default async function IntentsPage({
         legs: legsByIntent.get(intent.id) ?? [],
         matchesById,
         betSlipCount: slipCountByIntent.get(intent.id) ?? 0,
+        attempts: attemptsByIntent.get(intent.id) ?? [],
         now,
       }),
     )
     .sort(sortQueueItems);
-  const activeItems = queueItems.filter((item) => item.bucket === "active");
-  const expiredItems = queueItems.filter((item) => item.bucket === "expired");
-  const archivedItems = queueItems.filter((item) => item.bucket === "archived");
-  const todoItems = [...activeItems, ...expiredItems];
+  const pendingItems = queueItems.filter((item) => item.bucket === "needs_action");
+  const executedItems = queueItems.filter((item) => item.bucket === "executed");
+  const missedItems = queueItems.filter((item) => item.bucket === "closed_without_slip");
   const summaryItems = allIntents.map((intent) =>
     buildQueueItem({
       intent,
       legs: legsByIntent.get(intent.id) ?? [],
       matchesById,
       betSlipCount: slipCountByIntent.get(intent.id) ?? 0,
+      attempts: attemptsByIntent.get(intent.id) ?? [],
       now,
     }),
   );
-  const totalActiveStakeCents = summaryItems
-    .filter((item) => item.bucket === "active")
+  const totalPendingStakeCents = summaryItems
+    .filter((item) => item.bucket === "needs_action")
     .reduce((sum, item) => sum + item.intent.intendedStakeCents, 0);
   const totalExecutedStakeCents = summaryItems
-    .filter((item) => item.effectiveStatus === "executed")
+    .filter((item) => item.bucket === "executed")
     .reduce((sum, item) => sum + item.intent.intendedStakeCents, 0);
   const marketOptions = Array.from(new Set(allIntentLegs.map((leg) => leg.market))).sort().map((value) => ({
     value,
@@ -329,11 +349,10 @@ export default async function IntentsPage({
     q,
   });
   const tabCounts: Record<IntentView, number> = {
-    todo: todoItems.length,
+    pending: pendingItems.length,
+    executed: executedItems.length,
+    missed: missedItems.length,
     replay: codexReplay.rows.length,
-    active: activeItems.length,
-    expired: expiredItems.length,
-    archived: archivedItems.length,
     all: queueItems.length,
   };
   const viewConfig: Record<Exclude<IntentView, "replay">, {
@@ -342,38 +361,32 @@ export default async function IntentsPage({
     items: IntentQueueItem[];
     emptyText: string;
   }> = {
-    todo: {
-      title: "待办",
-      description: "优先处理仍可执行的 intent；过期但未归档的 intent 放在后面复核。",
-      items: todoItems,
-      emptyText: "暂无待办 intent。",
+    pending: {
+      title: "待处理",
+      description: "这里不是历史列表，只放需要你下一步处理的 intent：核对盘口后执行、失败后重试或取消、过期后重建。",
+      items: pendingItems,
+      emptyText: "暂无需要处理的 intent。",
     },
-    active: {
-      title: "待执行",
-      description: "仍在执行窗口内，可以展开后预览执行或创建成交注单。",
-      items: activeItems,
-      emptyText: "暂无待执行 intent。",
+    executed: {
+      title: "已执行",
+      description: "已经生成真实或模拟注单的 intent。后续主要去注单中心结算和复盘。",
+      items: executedItems,
+      emptyText: "暂无已执行 intent。",
     },
-    expired: {
-      title: "已过执行窗口",
-      description: "状态字段可能还没归档，但不再允许直接执行。",
-      items: expiredItems,
-      emptyText: "暂无过期未归档 intent。",
-    },
-    archived: {
-      title: "归档",
-      description: "已成交、已取消或显式过期的历史决策。",
-      items: archivedItems,
-      emptyText: "暂无归档 intent。",
+    missed: {
+      title: "未采纳 / 失败",
+      description: "没有生成注单的最终记录：你没有采纳、显式取消、执行失败或已关闭，用于后续复盘 Codex 建议质量。",
+      items: missedItems,
+      emptyText: "暂无未采纳或失败记录。",
     },
     all: {
       title: "全部决策",
-      description: "按当前筛选条件展示所有 intent。",
+      description: "审计和搜索入口。日常操作优先使用前面的动作 tab。",
       items: queueItems,
       emptyText: "暂无 intent。",
     },
   };
-  const listView = view === "replay" ? viewConfig.todo : viewConfig[view];
+  const listView = view === "replay" ? viewConfig.pending : viewConfig[view];
 
   return (
     <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -381,15 +394,15 @@ export default async function IntentsPage({
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2 className="text-2xl font-semibold tracking-normal">决策队列</h2>
-            <p className="text-sm text-muted-foreground">按可执行性整理：先处理待执行，再复核过期，最后查看归档。</p>
+            <p className="text-sm text-muted-foreground">处理已经形成的下注意图：先决定执行、重试、取消或重建，再进入注单和复盘。</p>
           </div>
           <span className="text-sm text-muted-foreground">{queueItems.length} / {allIntents.length} 条</span>
         </div>
         <div className="grid gap-3 md:grid-cols-4">
-          <QueueSummaryCell label="待处理" value={summaryItems.filter((item) => item.bucket === "active").length} detail={`stake ${formatCny(totalActiveStakeCents)}`} />
-          <QueueSummaryCell label="已过窗口" value={summaryItems.filter((item) => item.bucket === "expired").length} detail="需取消或重建" />
-          <QueueSummaryCell label="已成交" value={summaryItems.filter((item) => item.effectiveStatus === "executed").length} detail={`stake ${formatCny(totalExecutedStakeCents)}`} />
-          <QueueSummaryCell label="已取消/过期" value={summaryItems.filter((item) => ["cancelled", "expired"].includes(item.effectiveStatus)).length} detail="归档记录" />
+          <QueueSummaryCell label="待处理" value={summaryItems.filter((item) => item.bucket === "needs_action").length} detail={`stake ${formatCny(totalPendingStakeCents)}`} />
+          <QueueSummaryCell label="已执行" value={summaryItems.filter((item) => item.bucket === "executed").length} detail={`stake ${formatCny(totalExecutedStakeCents)}`} />
+          <QueueSummaryCell label="未采纳/失败" value={summaryItems.filter((item) => item.bucket === "closed_without_slip").length} detail="无资金影响" />
+          <QueueSummaryCell label="Codex 复盘" value={codexReplay.rows.length} detail={`${codexReplay.execution.placedCount} 已下注 / ${codexReplay.execution.notAdoptedCount} 未采纳`} />
         </div>
         <QueueTabs activeView={view} params={params} counts={tabCounts} />
         {view === "replay" ? (
@@ -401,10 +414,9 @@ export default async function IntentsPage({
               activeCount={activeFilterCount}
               fields={[
                 { name: "view", label: "视图", type: "select", value: view, options: [
-                  { value: "todo", label: "待办" },
-                  { value: "active", label: "待执行" },
-                  { value: "expired", label: "过期" },
-                  { value: "archived", label: "归档" },
+                  { value: "pending", label: "待处理" },
+                  { value: "executed", label: "已执行" },
+                  { value: "missed", label: "未采纳/失败" },
                   { value: "all", label: "全部" },
                 ] },
                 { name: "q", label: "搜索", value: q, placeholder: "球队 / 选择 / 理由 / intent" },
