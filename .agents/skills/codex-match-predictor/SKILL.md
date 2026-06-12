@@ -40,6 +40,15 @@ Prediction is separate from betting:
 7. When rerun before kickoff, re-check new information and update an existing prediction if the new evidence materially changes the view. Record the changed rationale and risk note.
 8. After final result is known, update the same prediction with actual score and hit flags.
 
+## Prediction Gate
+
+- The weekly candidate pool is not a to-do list to fill. It is a watchlist.
+- Default to `defer` unless there is enough edge to justify a concrete scoreline.
+- Do not write a score prediction when the final decision is low confidence. Low confidence means "watch", not "publish a weak prediction".
+- A `predict` action should usually have at least one concrete anchor: live market baseline, verified team news, stable strength gap, matchup edge, or a clear tactical scoring environment.
+- Use `defer` for matches that need closer kickoff information, especially lineups, injury confirmation, late odds movement, weather, venue impact, or first-round form.
+- Use `abstain` when the match has no meaningful Codex edge even after checking available information.
+
 ## Rerun Discipline
 
 - This skill is expected to be run repeatedly during the week.
