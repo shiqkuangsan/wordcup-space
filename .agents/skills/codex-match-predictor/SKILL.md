@@ -13,6 +13,11 @@ Never create a prediction after the match has already started or ended. If kicko
 
 Only predict the current local week. In this project, "this week" means the user's local calendar week in `Asia/Taipei`, from now until Sunday 23:59:59. Do not pre-fill next week, later group-stage rounds, knockout matches, or any fixture outside the current weekly window.
 
+Score prediction is the primary World Cup tracking task. Betting decisions are
+downstream of the score prediction, not the other way around. For every match
+Codex chooses to cover, create or refresh the score prediction first, then decide
+whether that scoreline creates any bet intent.
+
 Prediction is separate from betting:
 
 - A prediction may be recorded without any bet intent.
@@ -30,6 +35,8 @@ Prediction is separate from betting:
    - current odds or market baseline when available;
    - recent form and strength signal;
    - injuries, suspensions, lineup or team-news uncertainty;
+   - host-country or quasi-home advantage for USA, Canada, and Mexico in the
+     2026 World Cup;
    - tactical matchup and likely scoring environment;
    - opposing evidence.
 5. Decide one of three actions:
@@ -46,6 +53,9 @@ Prediction is separate from betting:
 - Default to `defer` unless there is enough edge to justify a concrete scoreline.
 - Do not write a score prediction when the final decision is low confidence. Low confidence means "watch", not "publish a weak prediction".
 - A `predict` action should usually have at least one concrete anchor: live market baseline, verified team news, stable strength gap, matchup edge, or a clear tactical scoring environment.
+- For 2026 World Cup matches involving USA, Canada, or Mexico, explicitly assess
+  home/co-host advantage. This factor can support edge or confidence, but it
+  must not automatically force a home-win prediction.
 - Use `defer` for matches that need closer kickoff information, especially lineups, injury confirmation, late odds movement, weather, venue impact, or first-round form.
 - Use `abstain` when the match has no meaningful Codex edge even after checking available information.
 
@@ -56,6 +66,9 @@ Prediction is separate from betting:
 - User and Codex may ask for the same weekly scan multiple times as odds, team news, injuries, weather, or lineup information changes.
 - If a previous prediction becomes weak after new evidence, update it before kickoff or mark it in the user-facing summary as needing reassessment.
 - Never wait until after kickoff to "fix" a forecast. After kickoff, only settle or review.
+- When a betting decision is requested, first state the current score prediction
+  and whether it changed. Only then discuss singles, parlays, stake size, or
+  execution.
 
 ## API Shape
 

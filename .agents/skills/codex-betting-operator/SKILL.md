@@ -31,6 +31,18 @@ reduces, or substitutes for a Codex bet. Codex may choose the same match, same
 market, same selection, and same stake as User if Codex's own evidence gate and
 risk rules pass.
 
+Parlay legs are independent portfolio decisions. A parlay leg does not need to
+also be bought as a single, and single-bet candidates do not constrain the parlay
+pool. Codex may choose:
+
+- a leg that is also bought as a single;
+- a leg that is only used in a parlay;
+- a different market from the same match than the single-bet market;
+- no parlay, even when singles exist.
+
+The only hard requirement is that each leg must have its own rationale, price,
+minimum executable odds, and compatibility with the overall portfolio risk.
+
 Codex may create:
 
 - `wait` / observation: incomplete evidence, line watch, possible idea.
@@ -46,6 +58,47 @@ the final submit/place-bet action. The final external submission requires the
 user's explicit confirmation at action time. If execution succeeds, then record a
 `bet_slip`; if execution fails or the user does not confirm, do not record a
 slip.
+
+## Betway Execution Hygiene
+
+Betway execution is stateful and easy to pollute. Before every real-money
+execution handoff, verify the visible betslip rather than trusting the last
+browser action.
+
+Required handoff checks:
+
+- Match: each selected item must match the intended teams and kickoff time.
+- Market: each selected item must match the intended market, selection, line,
+  and odds format.
+- Stake: the active tab must show the intended stake and the expected total
+  stake. For parlays, single-bet stakes must not be active.
+- Mode: parlays must be on the `串关` tab and show the expected `2串1` / leg
+  count, not separate `单关` rows.
+- Odds: final displayed odds must pass the intent's minimum executable odds and
+  the 6% tolerance check.
+- Submit: stop at `请下注` / `确认下注`; the user must click the final submit.
+
+Common Betway pitfalls:
+
+- Search results may return side markets such as `先开球`; do not click a search
+  result until the match title, kickoff time, and market type are verified.
+- Event cards and boosted/featured cards can auto-add unwanted selections such
+  as `3串1增值`; if any non-target item appears in the betslip, remove it before
+  continuing.
+- After adding multiple legs, Betway may remain on `单关`. Switch to `串关` and
+  confirm the parlay stake before handoff.
+- Completed-bet receipts are not an active new betslip. Close or confirm the
+  receipt before preparing the next bet.
+- Amount inputs may ignore normal typing because of iframes or input overlays.
+  Prefer the iframe input when operating Chrome, then verify the visible stake
+  and potential return.
+- Do not infer execution from a prepared betslip. Only record after the user
+  provides a success page/screenshot, confirmation number, or explicit execution
+  success.
+
+After recording a parlay slip, verify `bet_slip_legs` store each leg's own final
+odds. The parent `bet_slips.final_odds` stores total parlay odds; it must not be
+copied onto every leg.
 
 ## Minimum Evidence Gate
 
@@ -77,7 +130,9 @@ For each week:
 
 1. Build the fixture pool from local `matches`.
 2. Collect current Betway odds for the week and note odds format per market.
-3. Rank matches as `单场候选`, `串关腿候选`, `观察`, or `放弃`.
+3. Rank matches as `单场候选`, `串关腿候选`, `观察`, or `放弃`. Treat
+   `单场候选` and `串关腿候选` as separate pools; do not derive one mechanically
+   from the other.
 4. For candidates, collect external context and pass the evidence gate.
 5. Build a week portfolio plan: singles, parlays, stake budget, max daily loss, and execution windows.
 6. Create intents only after the evidence gate passes and `/api/intents` dry run has no warnings.
