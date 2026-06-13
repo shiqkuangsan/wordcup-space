@@ -23,6 +23,11 @@ Prediction is separate from betting:
 - A prediction may be recorded without any bet intent.
 - A bet intent requires the stricter betting evidence gate.
 - Prediction accuracy is evaluated by exact score. Win/draw/loss is only derived from the score when internal statistics need it; do not present it as a separate forecast.
+- A predicted score must not automatically become a correct-score bet, draw bet,
+  or exact outcome bet. Betting markets require independent price/value
+  evidence.
+- If the predicted score suggests a market but the evidence gate is weak, record
+  the score prediction and mark betting as `观察` or `否`.
 
 ## Required Workflow
 
@@ -69,6 +74,20 @@ Prediction is separate from betting:
 - When a betting decision is requested, first state the current score prediction
   and whether it changed. Only then discuss singles, parlays, stake size, or
   execution.
+- Do not rewrite a prediction after kickoff. If live play exposes that the
+  pre-match prediction was wrong, preserve it and use the result for review.
+
+## Prediction Review Discipline
+
+After a result is known:
+
+- Evaluate exact-score hit first.
+- Separately note whether the derived match outcome was right.
+- If a related bet existed, review whether the bet failed because the score
+  prediction was wrong, because the chosen market was too narrow, because
+  execution price was bad, or because variance was acceptable.
+- Use early tournament matches as calibration samples. Do not overfit one upset
+  or one late comeback into a broad rule.
 
 ## API Shape
 

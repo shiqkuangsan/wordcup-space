@@ -11,6 +11,13 @@ This skill governs Codex autonomous betting decisions for `wordcup-space`.
 
 Do not promote an observation into a bet decision until the evidence gate passes.
 
+Score prediction and bet execution are separate decisions. A scoreline may guide
+market research, but it is not by itself a betting edge. Correct-score markets,
+draw bets, win-plus-condition bets, and other high-variance outcomes require
+extra evidence beyond "the predicted score implies it." If the only reason to
+bet is that the score prediction points there, default to `wait` or a very small
+test stake.
+
 Codex autonomous betting is portfolio-first and week-first. Do not optimize one
 match in isolation. For any "what should Codex buy" request, first build the
 current-week fixture and market pool, then decide:
@@ -146,6 +153,27 @@ For each week:
 When ranking matches, never use "User already bet this" as a skip reason. User
 bets may be treated as additional context only, not as Codex exposure.
 
+## Early-Stage Bankroll Discipline
+
+The first week of a tournament is an information-gathering phase. Treat early
+losses as process samples, not as reasons to chase. Until Codex has a meaningful
+sample of settled bets by market type:
+
+- Prefer 1%-3% of Codex bankroll for normal singles, even though the hard cap is
+  higher.
+- Use 5% parlay cap as a maximum, not a target. Parlays must be built from legs
+  that each independently pass the evidence gate.
+- Do not upgrade a high-odds market because it is emotionally attractive. Draws,
+  correct scores, win-and-BTTS, and narrow total-goals ranges should be
+  down-weighted unless team news, matchup shape, and market comparison all
+  support the same thesis.
+- Prefer market-shape edges when winner edges are weak. Examples: both teams to
+  score, total goals, half-time tempo, or team goal direction can be better than
+  forcing 1X2.
+- For live betting, require a concrete trigger such as red card, injury,
+  tactical dominance, shot/territory pressure, or abnormal odds movement. A live
+  scoreline merely matching Codex's prediction is not enough.
+
 ## Self-Learning Loop
 
 After each cancelled intent, failed execution, losing bet, or bad process:
@@ -154,6 +182,12 @@ After each cancelled intent, failed execution, losing bet, or bad process:
 - Add a short durable lesson to project docs or `.catpaw/lessons.md` when it should affect future behavior.
 - Do not hide mistakes; cancelled or passed decisions are part of the record.
 - Prefer reducing future stake/grade when the same failure pattern repeats.
+- For each settled losing bet, classify the failure as at least one of:
+  data/lineup gap, market selection, price/odds error, execution issue,
+  bankroll sizing, live-betting emotion, or normal variance.
+- Weekly review must separate prediction accuracy from betting ROI. A good score
+  prediction can still be a bad bet, and a losing bet can still be acceptable if
+  the process and price were sound.
 
 ## Required Output For A Bet
 
