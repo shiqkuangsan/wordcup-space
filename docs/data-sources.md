@@ -23,6 +23,8 @@
 | 5 | The Odds API / 其他商业 odds API | 多家博彩公司赔率标准化和横向比较 | 使用本地环境变量保存 key，不提交 secrets。 |
 | 6 | 手工研究 | 补充上下文和交叉校验 | 来源写入 `source_note`。 |
 
+Betway 盘口名称和系统 `market` key 的映射见 [Betway 常用盘口类型字典](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/betway-market-types.md:1)。浏览器采集时要区分常规比赛详情、`赔率增值`、`赛事串关` 和 `先开球` 等副市场。
+
 当前内置赔率同步目标平台限定为 Betway、bet365、DraftKings。命令：
 
 ```bash
