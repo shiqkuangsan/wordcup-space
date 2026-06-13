@@ -18,8 +18,6 @@ export default async function PredictionsPage() {
   const allResults = db.select().from(matchResults).all();
   const matchesById = new Map(allMatches.map((match) => [match.id, match]));
   const resultsByMatchId = new Map(allResults.map((result) => [result.matchId, result]));
-  const settled = predictions.filter((prediction) => prediction.status === "settled");
-  const scoreHits = settled.filter((prediction) => prediction.scoreHit).length;
   const sortedPredictions = [...predictions].sort((left, right) => {
     const leftMatch = matchesById.get(left.matchId);
     const rightMatch = matchesById.get(right.matchId);
@@ -38,6 +36,11 @@ export default async function PredictionsPage() {
       (actualHomeScore !== null && actualHomeScore !== undefined && actualAwayScore !== null && actualAwayScore !== undefined
         ? getScoreOutcome(actualHomeScore, actualAwayScore)
         : null);
+    const derivedScoreHit =
+      actualHomeScore !== null && actualHomeScore !== undefined && actualAwayScore !== null && actualAwayScore !== undefined
+        ? prediction.predictedHomeScore === actualHomeScore && prediction.predictedAwayScore === actualAwayScore
+        : null;
+    const derivedOutcomeHit = actualOutcome ? prediction.predictedOutcome === actualOutcome : null;
     const title = match ? formatMatchTitle(match.homeTeam, match.awayTeam) : prediction.matchId;
 
     return {
@@ -60,12 +63,16 @@ export default async function PredictionsPage() {
       actualHomeScore,
       actualAwayScore,
       actualOutcome,
-      scoreHit: prediction.scoreHit,
-      outcomeHit: prediction.outcomeHit ?? (actualOutcome ? prediction.predictedOutcome === actualOutcome : null),
+      scoreHit: prediction.scoreHit ?? derivedScoreHit,
+      outcomeHit: prediction.outcomeHit ?? derivedOutcomeHit,
       resultSourceNote: prediction.resultSourceNote ?? result?.sourceNote ?? null,
       resultCheckedAt: prediction.resultCheckedAt,
     };
   });
+  const scoreChecked = predictionItems.filter((prediction) => prediction.scoreHit !== null && prediction.scoreHit !== undefined);
+  const outcomeChecked = predictionItems.filter((prediction) => prediction.outcomeHit !== null && prediction.outcomeHit !== undefined);
+  const scoreHits = scoreChecked.filter((prediction) => prediction.scoreHit).length;
+  const outcomeHits = outcomeChecked.filter((prediction) => prediction.outcomeHit).length;
 
   return (
     <div className="space-y-6">
@@ -73,7 +80,7 @@ export default async function PredictionsPage() {
         <div>
           <h2 className="text-2xl font-semibold tracking-normal">Codex 预测</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            记录每周赛前比分预测，赛后核对真实比分和比分命中情况。
+            记录每周赛前比分预测，赛后分开核对比分命中和赛果命中。
           </p>
         </div>
         <Badge variant="outline">{predictions.length} 条预测</Badge>
@@ -86,11 +93,11 @@ export default async function PredictionsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm"><Target className="size-4" />比分命中</CardTitle></CardHeader>
-          <CardContent className="font-mono text-2xl">{scoreHits}/{settled.length}</CardContent>
+          <CardContent className="font-mono text-2xl">{scoreHits}/{scoreChecked.length}</CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm"><CheckCircle2 className="size-4" />已核对</CardTitle></CardHeader>
-          <CardContent className="font-mono text-2xl">{settled.length}</CardContent>
+          <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm"><CheckCircle2 className="size-4" />赛果命中</CardTitle></CardHeader>
+          <CardContent className="font-mono text-2xl">{outcomeHits}/{outcomeChecked.length}</CardContent>
         </Card>
       </div>
 

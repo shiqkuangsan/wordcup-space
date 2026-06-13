@@ -67,23 +67,38 @@ function OutcomeBadge({ item }: { item: PredictionListItem }) {
   return <Badge variant="outline">待赛果核对</Badge>;
 }
 
-function OutcomeRibbon({ item }: { item: PredictionListItem }) {
-  const state = item.outcomeHit === true ? "hit" : item.outcomeHit === false ? "miss" : "pending";
-  const label = state === "hit" ? "命中" : state === "miss" ? "未中" : "待核对";
+function HitPill({
+  label,
+  value,
+}: {
+  label: string;
+  value?: boolean | null;
+}) {
+  const state = value === true ? "hit" : value === false ? "miss" : "pending";
   const Icon = state === "hit" ? CheckCircle2 : state === "miss" ? XCircle : null;
+  const suffix = state === "hit" ? "命中" : state === "miss" ? "未中" : "待核";
 
   return (
     <span
       className={cn(
-        "inline-flex h-7 min-w-[84px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-semibold",
+        "inline-flex h-6 min-w-[76px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-semibold",
         state === "hit" && "border-emerald-700 bg-emerald-600 text-white",
         state === "miss" && "border-red-700 bg-red-600 text-white",
         state === "pending" && "border-border bg-muted text-muted-foreground",
       )}
     >
       {Icon ? <Icon className="size-3.5" /> : null}
-      {label}
+      {label}{suffix}
     </span>
+  );
+}
+
+function HitSummary({ item }: { item: PredictionListItem }) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      <HitPill label="比分" value={item.scoreHit} />
+      <HitPill label="赛果" value={item.outcomeHit} />
+    </div>
   );
 }
 
@@ -200,12 +215,12 @@ export function PredictionListDrawer({ items }: { items: PredictionListItem[] })
       </CardHeader>
       <CardContent>
         <div className="overflow-hidden rounded-md border">
-          <div className="grid grid-cols-[minmax(180px,1.5fr)_88px_88px_88px_104px_40px] gap-3 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground max-md:hidden">
+          <div className="grid grid-cols-[minmax(180px,1.5fr)_88px_88px_88px_160px_40px] gap-3 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground max-md:hidden">
             <div>比赛</div>
             <div>预测比分</div>
             <div>预测赛果</div>
             <div>真实</div>
-            <div>命中</div>
+            <div>比分 / 赛果</div>
             <div className="sr-only">操作</div>
           </div>
 
@@ -220,7 +235,7 @@ export function PredictionListDrawer({ items }: { items: PredictionListItem[] })
                 <SheetTrigger asChild>
                   <button
                     type="button"
-                    className="grid w-full grid-cols-[1fr_auto] items-center gap-3 border-b px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(180px,1.5fr)_88px_88px_88px_104px_40px]"
+                    className="grid w-full grid-cols-[1fr_auto] items-center gap-3 border-b px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(180px,1.5fr)_88px_88px_88px_160px_40px]"
                   >
                     <div className="min-w-0">
                       <div className="truncate font-medium">{item.matchTitle}</div>
@@ -234,7 +249,7 @@ export function PredictionListDrawer({ items }: { items: PredictionListItem[] })
                     <div className="hidden text-sm md:block">{formatPredictionOutcome(item.predictedOutcome)}</div>
                     <div className="hidden font-mono text-sm md:block">{actualScore}</div>
                     <div className="hidden md:block">
-                      <OutcomeRibbon item={item} />
+                      <HitSummary item={item} />
                     </div>
                     <div className="flex items-center justify-end gap-2">
                       <span className="flex flex-col items-end gap-1 text-right text-sm md:hidden">
@@ -242,7 +257,7 @@ export function PredictionListDrawer({ items }: { items: PredictionListItem[] })
                         <span className="block text-xs text-muted-foreground">
                           {formatPredictionOutcome(item.predictedOutcome)} · {formatPredictionStatus(item.status)}
                         </span>
-                        <OutcomeRibbon item={item} />
+                        <HitSummary item={item} />
                       </span>
                       <ChevronRight className="size-4 text-muted-foreground" />
                     </div>
