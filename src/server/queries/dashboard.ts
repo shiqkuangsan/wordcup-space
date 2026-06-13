@@ -4,6 +4,7 @@ import { betIntentLegs, betIntents, betSlipLegs, betSlips, executionAttempts, ma
 import { localDateKey } from "@/domain/dates";
 import { summarizeReviewByDecision } from "@/domain/review-metrics";
 import { formatMatchTitle } from "@/domain/team-names";
+import { listBetSlips } from "@/server/queries/bets";
 
 export async function getDashboardSummary() {
   const db = getDb();
@@ -44,6 +45,7 @@ export async function getDashboardSummary() {
     .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
   const todayMatches = upcomingMatches.filter((match) => localDateKey(match.kickoffAt) === todayKey);
   const focusMatches = (todayMatches.length ? todayMatches : upcomingMatches).slice(0, 8);
+  const recentBetSlips = (await listBetSlips()).slice(0, 10);
   const pendingIntentIds = new Set(pendingIntentRows.map((intent) => intent.id));
   const pendingIntentMatchIds = new Set(
     intentLegRows
@@ -142,7 +144,7 @@ export async function getDashboardSummary() {
       .orderBy(desc(portfolioLedgerEntries.createdAt))
       .limit(200)
       .all(),
-    recentBetSlips: db.select().from(betSlips).orderBy(desc(betSlips.createdAt)).limit(10).all(),
+    recentBetSlips,
     commandCenter: {
       dateKey: todayKey,
       focusLabel: todayMatches.length ? "今日比赛" : "下一批比赛",
