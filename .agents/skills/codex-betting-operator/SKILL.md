@@ -53,6 +53,10 @@ failure mode, and that correlated downside is counted in the day portfolio.
 Codex has discretion to use the daily risk capacity. Early-stage discipline
 means avoiding forced or low-quality bets, not artificially restricting the day
 to one tiny stake when several independent edges exist.
+The inverse is also true: a matchday fixture list is not a purchase order. Do
+not force one single from every match or one parlay leg from every match. If the
+available prices are thin, the market is efficient, or the edge is mostly
+narrative, pass. "No bet" is a valid completed betting decision.
 
 When a goal is active for weekly betting decisions, Codex must keep moving the
 weekly analysis forward without waiting for the user to name each match. User
@@ -137,6 +141,32 @@ Before choosing or recording a Betway football market, consult
 `docs/betway-market-types.md`. Use the documented system key for intents and
 slips, and keep the original Betway display text in the rationale or source
 note when a market is ambiguous.
+
+For BW / 沙盟体育 / SABA pre-match odds capture, prefer the project command
+documented in `docs/bw-odds-capture.md`.
+
+Primary route:
+
+```bash
+pnpm capture:saba-odds -- --date <local-date> --scope common
+pnpm capture:saba-odds -- --date <local-date> --scope common --write
+```
+
+Use `--scope common` for daily decisions. Use `--scope all` only when raw
+archival coverage is more important than UI cleanliness, because unknown SABA
+markets are stored as `saba:<betTypeId>`.
+
+Fallback route:
+
+```bash
+pnpm capture:bw-odds -- --match-id <id> --text-file <file> --dry-run
+pbpaste | pnpm capture:bw-odds -- --match-id <id> --stdin --dry-run
+```
+
+Both commands are read-only with respect to the bookmaker page and only write
+local `odds_snapshots` after the dry-run output looks structurally correct.
+SABA visitor/odds tokens are runtime secrets: never print them, commit them, put
+them in docs, or store them in database notes.
 
 Required handoff checks:
 
@@ -252,6 +282,13 @@ sample of settled bets by market type:
   hard guard before the larger daily loss cap; unused room is not carried over.
 - Avoid anchoring stakes to cute denominations. Use amounts like 35, 45, 50, 65,
   or 80 when the bankroll percentage and confidence tier call for them.
+- Do not fill the daily 25% stake cap just because it exists. The cap is a
+  maximum loss guard, not a target budget. If only one market clears the gate,
+  buy one; if none clears, buy none.
+- Treat low-return favorites and low-odds safety legs with suspicion. Odds below
+  roughly 1.70 need a clear edge, clean settlement shape, and enough portfolio
+  value to justify real-money risk. Do not use several low-odds legs to make a
+  plan look active.
 - Do not upgrade a high-odds market because it is emotionally attractive. Draws,
   correct scores, win-and-BTTS, and narrow total-goals ranges should be
   down-weighted unless team news, matchup shape, and market comparison all

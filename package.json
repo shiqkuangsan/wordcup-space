@@ -15,6 +15,8 @@
     "sync:worldcup2026": "tsx src/scripts/sync-worldcup-2026.ts",
     "sync:worldcup2026:api": "tsx src/scripts/sync-worldcup-2026-api.ts",
     "sync:odds": "tsx src/scripts/sync-odds.ts",
+    "capture:bw-odds": "tsx src/scripts/capture-bw-odds.ts",
+    "capture:saba-odds": "tsx src/scripts/capture-saba-odds.ts",
     "record:placed-bet": "tsx src/scripts/record-placed-bet.ts",
     "backfill:predictions": "tsx src/scripts/backfill-prediction-results.ts",
     "test": "vitest run",

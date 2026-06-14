@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { MatchSyncPanel } from "@/components/matches/sync-panel";
 import { OddsSyncPanel } from "@/components/matches/odds-sync-panel";
+import { SabaOddsCapturePanel } from "@/components/matches/saba-odds-capture-panel";
 
 type SourceSummary = {
   sourceName: string;
@@ -43,6 +44,7 @@ export function MatchSyncDrawer({
         <div className="space-y-4 p-4">
           <MatchSyncPanel summaries={summaries} visibleSource={visibleSource} />
           <OddsSyncPanel />
+          <SabaOddsCapturePanel />
         </div>
       </SheetContent>
     </Sheet>

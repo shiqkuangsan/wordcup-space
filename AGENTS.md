@@ -42,6 +42,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 预测和下注必须分开：比分预测是世界杯主线统计任务；下注是更严格的资金决策。预测命中某个方向，不等于必须买该方向。
 - 每场比赛可以不下注，也可以有多张 Codex 注单；单关和串关是两个独立决策池，串关腿不要求同时存在单关。
 - 放弃是有效决策。赔率不够、盘口形态差、阵容不明、数据不足或日额度不够时，Codex 应主动 `pass` 或 `wait`，并说明原因。
+- 每日 4 场只是候选池，不是必须下注清单；每日本金 25% 是上限不是目标。不要为了覆盖每场、凑串关或显得主动而买低赔率、弱证据盘口。
 - 临场反买是允许的，但必须有触发条件，例如被低估方持续压迫、主场气势、热门方打不开、伤停/红黄牌/换人改变、赔率漂移或比赛节奏反向。反买默认小仓，买的是“原判断失败路径”，不能演变成情绪性追单。
 
 ## 每日比赛操作流程
@@ -65,6 +66,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 不要因为赔率看起来漂亮就升级高波动玩法。正确比分、和局、胜且双方进球、窄区间总进球默认小额或观察，除非证据非常充分。
 - Betway 可能显示欧盘、港盘、马来盘；记录前必须确认格式，不能把马来盘当港盘。
 - Betway 的 `赔率增值`、`赛事串关`、boosted card 不等同普通盘口；不能把它们的组合价格当作正常单关价格。
+- BW / 沙盟体育赛前盘口优先走只读 SABA API：`pnpm capture:saba-odds -- --date <本地日期> --scope common` dry-run 后再 `--write`。不要让用户逐场截图作为日常方案。
+- SABA token 只在内存中使用；不得打印、提交、写入文档或数据库。SABA `Price` 入库前必须折算为系统 `decimalOdds`，并在 `sourceNote` 保留 raw price、`betTypeId`、`marketId`、`selId` 和推断格式。
+- `--scope common` 用于日常下注决策；`--scope all` 用于原始归档，未知盘口会以 `saba:<betTypeId>` 入库，不能直接当成已理解的下注市场。
 
 ## 资金与执行边界
 
