@@ -271,6 +271,16 @@ sample of settled bets by market type:
 - For live betting, require a concrete trigger such as red card, injury,
   tactical dominance, shot/territory pressure, or abnormal odds movement. A live
   scoreline merely matching Codex's prediction is not enough.
+- For live hedging, calculate at least two branches before judging the stake:
+  the protected branch where the original tickets still win, and the adverse
+  branch where the hedge wins while the original tickets lose. Use the hedge
+  market's profit-only odds when Betway shows Hong Kong odds. A good defensive
+  hedge can be slightly above the adverse-branch break-even stake when it locks
+  in a small positive result while preserving most of the original upside.
+- When User and Codex tickets share one platform account but separate ledgers,
+  state which scope is being hedged. A hedge may be excessive for User-only
+  exposure but correct for the combined practical exposure across User and Codex
+  tickets.
 
 ## Self-Learning Loop
 
@@ -278,6 +288,9 @@ After each cancelled intent, failed execution, losing bet, or bad process:
 
 - Identify whether the error was data, odds format, market selection, stake sizing, execution, or reasoning.
 - Add a short durable lesson to project docs or `.catpaw/lessons.md` when it should affect future behavior.
+- Also preserve positive lessons. If a live hedge, stake split, market choice, or
+  execution pattern proves useful and repeatable, add it to the skill or
+  operating playbook instead of only mentioning it in chat.
 - Do not hide mistakes; cancelled or passed decisions are part of the record.
 - Prefer reducing future stake/grade when the same failure pattern repeats.
 - For each settled losing bet, classify the failure as at least one of:

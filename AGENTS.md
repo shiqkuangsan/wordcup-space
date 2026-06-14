@@ -77,5 +77,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## 长会话沉淀要求
 
 - 每次实战暴露出可复用规则时，优先沉淀到 `AGENTS.md`、`.agents/skills/codex-betting-operator/SKILL.md`、`docs/operating-playbook.md` 或 `.catpaw/lessons.md`。
+- 凡是下注、对冲、结算、录单、看盘或页面操作中出现经过思考后认可的有效做法，Codex 要主动沉淀；不要等用户反复提醒。同类经验优先写入 skill 或操作手册，跨会话必须遵守的边界再同步到 `AGENTS.md`。
 - `AGENTS.md` 放跨会话必须遵守的角色、边界和流程；skill 放 Codex 执行细则；docs 放系统设计和用户操作手册；`.catpaw/lessons.md` 放短教训。
 - 后续新会话应先按本文件恢复上下文，不要要求用户重复解释 User/Codex 分账、真实资金、Betway、每日四场、预测与下注分离这些基础前提。
+
+## 前端 UI 交付 QA
+
+- UI 重构或页面级改动不能只看布局截图。交付前必须主动检查三类问题：操作按钮是否完整、枚举/状态/市场/风险标签是否已翻译、已有实体是否缺少合理跳转链接。
+- 枚举检查不能只看代码里的显式选项；要从本地数据库或页面真实数据抽样查看 distinct 值，避免 `speculative`、`full_time:correct_score` 这类历史值裸露到界面。
+- 页面列表项默认应提供可追溯跳转：自身定位、关联比赛、关联注单、关联 intent 或复盘对象。若不加链接，必须有明确理由，例如没有关联 ID 或会造成误操作。
+- 前端验证报告必须包含以上 QA 结论；不能等用户截图提醒后才补翻译、补按钮或补链接。
