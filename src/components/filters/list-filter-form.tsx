@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RotateCcw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type FilterOption = {
   value: string;
@@ -21,10 +22,12 @@ export function ListFilterForm({
   action,
   fields,
   activeCount,
+  layout = "default",
 }: {
   action: string;
   fields: FilterField[];
   activeCount: number;
+  layout?: "default" | "compact";
 }) {
   return (
     <form action={action} method="get" className="grid gap-3 rounded-md border bg-background/60 p-3">
@@ -32,7 +35,7 @@ export function ListFilterForm({
         <span className="text-sm font-medium">筛选</span>
         <span className="text-xs text-muted-foreground">{activeCount} 个条件</span>
       </div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className={cn("grid gap-3", layout === "compact" ? "grid-cols-1" : "md:grid-cols-2 xl:grid-cols-4")}>
         {fields.map((field) => (
           <label key={field.name} className="grid gap-1 text-xs text-muted-foreground">
             <span>{field.label}</span>

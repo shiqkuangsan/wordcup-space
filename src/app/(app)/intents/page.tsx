@@ -334,6 +334,19 @@ export default async function IntentsPage({
     value,
     label: formatMarketLabel(value),
   }));
+  const riskTierOptions = Array.from(new Set([
+    "normal",
+    "small_test",
+    "speculative",
+    "longshot",
+    "high_confidence",
+    "parlay",
+    "parlay_aggressive",
+    ...allIntents.map((intent) => intent.riskTier),
+  ])).map((value) => ({
+    value,
+    label: formatRiskTierLabel(value),
+  }));
   const matchOptions = allMatches.map((match) => ({
     value: match.id,
     label: `${formatLocalMinute(match.kickoffAt)} · ${formatMatchTitle(match.homeTeam, match.awayTeam)}`,
@@ -389,29 +402,51 @@ export default async function IntentsPage({
   const listView = view === "replay" ? viewConfig.pending : viewConfig[view];
 
   return (
-    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div className="min-w-0 space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-2xl font-semibold tracking-normal">决策队列</h2>
-            <p className="text-sm text-muted-foreground">处理已经形成的下注意图：先决定执行、重试、取消或重建，再进入注单和复盘。</p>
+            <p className="text-sm text-muted-foreground">优先处理待执行、失败重试和过期收口。</p>
           </div>
-          <span className="text-sm text-muted-foreground">{queueItems.length} / {allIntents.length} 条</span>
+          <div className="rounded-md border bg-background px-3 py-1.5 text-sm text-muted-foreground">
+            <span className="font-mono text-foreground">{queueItems.length}</span>
+            {" / "}
+            <span className="font-mono">{allIntents.length}</span>
+            {" 条"}
+          </div>
         </div>
-        <div className="grid gap-3 md:grid-cols-4">
-          <QueueSummaryCell label="待处理" value={summaryItems.filter((item) => item.bucket === "needs_action").length} detail={`stake ${formatCny(totalPendingStakeCents)}`} />
-          <QueueSummaryCell label="已执行" value={summaryItems.filter((item) => item.bucket === "executed").length} detail={`stake ${formatCny(totalExecutedStakeCents)}`} />
-          <QueueSummaryCell label="未采纳/失败" value={summaryItems.filter((item) => item.bucket === "closed_without_slip").length} detail="无资金影响" />
-          <QueueSummaryCell label="Codex 复盘" value={codexReplay.rows.length} detail={`${codexReplay.execution.placedCount} 已下注 / ${codexReplay.execution.notAdoptedCount} 未采纳`} />
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          <QueueSummaryCell label="现在处理" value={summaryItems.filter((item) => item.bucket === "needs_action").length} detail={formatCny(totalPendingStakeCents)} />
+          <QueueSummaryCell label="已成单" value={summaryItems.filter((item) => item.bucket === "executed").length} detail={formatCny(totalExecutedStakeCents)} />
+          <QueueSummaryCell label="未成交" value={summaryItems.filter((item) => item.bucket === "closed_without_slip").length} detail="无扣款" />
+          <QueueSummaryCell label="复盘样本" value={codexReplay.rows.length} detail={`${codexReplay.execution.placedCount}/${codexReplay.execution.notAdoptedCount}`} />
         </div>
         <QueueTabs activeView={view} params={params} counts={tabCounts} />
         {view === "replay" ? (
           <CodexReplayPanel replay={codexReplay} />
         ) : (
-          <>
+          <QueueSection
+            title={listView.title}
+            description={listView.description}
+            items={listView.items}
+            emptyText={listView.emptyText}
+            now={now}
+            platformAccounts={activePlatformAccounts}
+          />
+        )}
+      </div>
+      <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
+        <details open={activeFilterCount > 0} className="group rounded-lg border bg-card p-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium">
+            <span>筛选 / 搜索</span>
+            <span className="font-mono text-xs text-muted-foreground">{activeFilterCount}</span>
+          </summary>
+          <div className="mt-3">
             <ListFilterForm
               action="/intents"
               activeCount={activeFilterCount}
+              layout="compact"
               fields={[
                 { name: "view", label: "视图", type: "select", value: view, options: [
                   { value: "pending", label: "待处理" },
@@ -455,10 +490,7 @@ export default async function IntentsPage({
                   label: "风险",
                   type: "select",
                   value: riskTier,
-                  options: ["normal", "high_confidence", "parlay"].map((value) => ({
-                    value,
-                    label: formatRiskTierLabel(value),
-                  })),
+                  options: riskTierOptions,
                 },
                 {
                   name: "mode",
@@ -474,18 +506,15 @@ export default async function IntentsPage({
                 { name: "matchId", label: "比赛", type: "select", value: matchId, options: matchOptions },
               ]}
             />
-            <QueueSection
-              title={listView.title}
-              description={listView.description}
-              items={listView.items}
-              emptyText={listView.emptyText}
-              now={now}
-              platformAccounts={activePlatformAccounts}
-            />
-          </>
-        )}
-      </div>
-      <IntentForm matches={allMatches} />
+          </div>
+        </details>
+        <details className="group rounded-lg border bg-card p-3">
+          <summary className="cursor-pointer list-none text-sm font-medium">新建 intent</summary>
+          <div className="mt-3">
+            <IntentForm matches={allMatches} embedded />
+          </div>
+        </details>
+      </aside>
     </div>
   );
 }

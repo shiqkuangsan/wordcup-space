@@ -60,8 +60,16 @@ export function formatRiskTierLabel(riskTier: string): string {
       return "普通单场";
     case "high_confidence":
       return "高信心";
+    case "small_test":
+      return "小额测试";
+    case "speculative":
+      return "试探单";
+    case "longshot":
+      return "冷门/高赔";
     case "parlay":
       return "串关";
+    case "parlay_aggressive":
+      return "激进串关";
     default:
       return riskTier;
   }

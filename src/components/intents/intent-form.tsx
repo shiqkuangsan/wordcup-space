@@ -12,8 +12,12 @@ type Match = typeof matches.$inferSelect;
 
 const riskTierOptions = [
   { value: "normal", label: "普通单场（10%）" },
+  { value: "small_test", label: "小额测试" },
+  { value: "speculative", label: "试探单" },
+  { value: "longshot", label: "冷门/高赔" },
   { value: "high_confidence", label: "高信心单场（20%）" },
   { value: "parlay", label: "串关（5%）" },
+  { value: "parlay_aggressive", label: "激进串关" },
 ];
 
 const confidenceOptions = [
@@ -22,7 +26,7 @@ const confidenceOptions = [
   { value: "high", label: "高信心" },
 ];
 
-export function IntentForm({ matches }: { matches: Match[] }) {
+export function IntentForm({ matches, embedded = false }: { matches: Match[]; embedded?: boolean }) {
   async function action(formData: FormData) {
     "use server";
     const market = `${String(formData.get("period"))}:${String(formData.get("market"))}`;
@@ -55,13 +59,8 @@ export function IntentForm({ matches }: { matches: Match[] }) {
     revalidatePath("/");
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>创建决策 intent</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form action={action} className="grid gap-3 md:grid-cols-2">
+  const form = (
+    <form action={action} className="grid gap-3 md:grid-cols-2">
           <select name="portfolioId" defaultValue="codex" className="h-9 rounded-md border bg-background px-3 text-sm">
             <option value="codex">Codex</option>
             <option value="user">User</option>
@@ -108,7 +107,18 @@ export function IntentForm({ matches }: { matches: Match[] }) {
           </select>
           <Textarea name="rationale" placeholder="决策理由" required className="md:col-span-2" />
           <Button type="submit" className="md:col-span-2">保存 intent</Button>
-        </form>
+    </form>
+  );
+
+  if (embedded) return form;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>创建决策 intent</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {form}
       </CardContent>
     </Card>
   );
