@@ -1,4 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatMarketLabel } from "@/domain/betting-markets";
 import { formatLocalMinute } from "@/domain/dates";
 import { formatTeamName } from "@/domain/team-names";
 import type { oddsSnapshots } from "@/db/schema";
@@ -8,8 +9,22 @@ type OddsSnapshot = typeof oddsSnapshots.$inferSelect;
 const bookmakerRank: Record<string, number> = {
   Betway: 0,
   betway: 0,
+  "bw-shameng-saba": 0,
   bet365: 1,
   DraftKings: 2,
+};
+
+const marketRank: Record<string, number> = {
+  "full_time:moneyline": 0,
+  "full_time:handicap": 1,
+  "full_time:total": 2,
+  "full_time:double_chance": 3,
+  "full_time:correct_score": 4,
+  "full_time:total_goals_range": 5,
+  "half_time:moneyline": 10,
+  "half_time:handicap": 11,
+  "half_time:total": 12,
+  "half_time:correct_score": 13,
 };
 
 function includesAny(value: string, candidates: string[]) {
@@ -58,7 +73,168 @@ export function sortOddsGroups(groups: OddsSnapshot[][]) {
 
 function formatBookmakerName(value: string) {
   if (value.toLowerCase() === "betway") return "Betway";
+  if (value === "bw-shameng-saba") return "BW 沙盟";
   return value;
+}
+
+function groupByLine(group: OddsSnapshot[]) {
+  const rows = new Map<string, OddsSnapshot[]>();
+
+  for (const snapshot of group) {
+    const key = snapshot.line ?? "default";
+    rows.set(key, [...(rows.get(key) ?? []), snapshot]);
+  }
+
+  return Array.from(rows.entries()).sort(([lineA], [lineB]) => Number(lineA) - Number(lineB));
+}
+
+function sortSelections(a: OddsSnapshot, b: OddsSnapshot) {
+  const rank = (value: OddsSnapshot) => {
+    if (["主胜", "主队", "home", "1"].includes(value.selection.toLowerCase())) return 0;
+    if (["和局", "平局", "平", "draw", "x"].includes(value.selection.toLowerCase())) return 1;
+    if (["客胜", "客队", "away", "2"].includes(value.selection.toLowerCase())) return 2;
+    if (value.selection === "大") return 0;
+    if (value.selection === "小") return 1;
+    return 10;
+  };
+  const rankDiff = rank(a) - rank(b);
+  if (rankDiff !== 0) return rankDiff;
+  return a.selection.localeCompare(b.selection);
+}
+
+function OddsBox({ snapshot, label }: { snapshot?: OddsSnapshot; label?: string }) {
+  return (
+    <div className="min-h-14 rounded-md border bg-background px-3 py-2 text-sm shadow-sm">
+      <div className="truncate text-xs text-muted-foreground">{label ?? snapshot?.selection ?? "--"}</div>
+      <div className="mt-1 font-mono text-lg font-semibold tabular-nums">{snapshot ? snapshot.decimalOdds.toFixed(2) : "--"}</div>
+    </div>
+  );
+}
+
+function MarketGrid({ group, homeTeam, awayTeam }: { group: OddsSnapshot[]; homeTeam: string; awayTeam: string }) {
+  const market = group[0]?.market ?? "";
+
+  if (market.endsWith(":moneyline")) {
+    const home = findOutcome(group, "1", homeTeam, awayTeam);
+    const draw = findOutcome(group, "X", homeTeam, awayTeam);
+    const away = findOutcome(group, "2", homeTeam, awayTeam);
+
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        <OddsBox snapshot={home} label={`1 ${formatTeamName(homeTeam)}`} />
+        <OddsBox snapshot={draw} label="X 和局" />
+        <OddsBox snapshot={away} label={`2 ${formatTeamName(awayTeam)}`} />
+      </div>
+    );
+  }
+
+  if (market.endsWith(":handicap") || market.endsWith(":total")) {
+    return (
+      <div className="space-y-2">
+        {groupByLine(group).map(([line, snapshots]) => (
+          <div key={line} className="grid grid-cols-[64px_minmax(0,1fr)] gap-2">
+            <div className="flex min-h-14 items-center justify-center rounded-md border bg-muted/30 px-2 font-mono text-sm tabular-nums">
+              {line === "default" ? "-" : line}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {snapshots.sort(sortSelections).map((snapshot) => (
+                <OddsBox key={snapshot.id} snapshot={snapshot} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {group.slice().sort(sortSelections).map((snapshot) => (
+        <OddsBox
+          key={snapshot.id}
+          snapshot={snapshot}
+          label={snapshot.line ? `${snapshot.selection} ${snapshot.line}` : snapshot.selection}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function MatchOddsBoard({
+  groups,
+  homeTeam,
+  awayTeam,
+}: {
+  groups: OddsSnapshot[][];
+  homeTeam: string;
+  awayTeam: string;
+}) {
+  const bookmakerGroups = new Map<string, OddsSnapshot[][]>();
+
+  for (const group of groups) {
+    const bookmaker = group[0]?.bookmaker;
+    if (!bookmaker) continue;
+    bookmakerGroups.set(bookmaker, [...(bookmakerGroups.get(bookmaker) ?? []), group]);
+  }
+
+  const sortedBookmakers = Array.from(bookmakerGroups.entries()).sort(([a], [b]) => {
+    const rankA = bookmakerRank[a] ?? 99;
+    const rankB = bookmakerRank[b] ?? 99;
+    if (rankA !== rankB) return rankA - rankB;
+    return a.localeCompare(b);
+  });
+
+  if (sortedBookmakers.length === 0) {
+    return <div className="rounded-lg border bg-muted/20 p-6 text-sm text-muted-foreground">暂无盘口数据。</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {sortedBookmakers.map(([bookmaker, bookmakerMarkets]) => {
+        const sortedMarkets = bookmakerMarkets.slice().sort((a, b) => {
+          const marketA = a[0]?.market ?? "";
+          const marketB = b[0]?.market ?? "";
+          const rankA = marketRank[marketA] ?? 99;
+          const rankB = marketRank[marketB] ?? 99;
+          if (rankA !== rankB) return rankA - rankB;
+          return marketA.localeCompare(marketB);
+        });
+        const latestCapturedAt = sortedMarkets
+          .map((group) => group[0]?.capturedAt)
+          .filter(Boolean)
+          .sort()
+          .at(-1);
+
+        return (
+          <section key={bookmaker} className="overflow-hidden rounded-lg border bg-card">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/35 px-4 py-3">
+              <div>
+                <h3 className="font-semibold">{formatBookmakerName(bookmaker)}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {sortedMarkets.length} 类盘口{latestCapturedAt ? ` · 更新 ${formatLocalMinute(latestCapturedAt)}` : ""}
+                </p>
+              </div>
+              <div className="rounded-full border bg-background px-2 py-1 text-xs text-muted-foreground">只读</div>
+            </div>
+            <div className="divide-y">
+              {sortedMarkets.map((group) => {
+                const first = group[0];
+                return (
+                  <div key={`${first.bookmaker}-${first.market}-${first.capturedAt}`} className="space-y-3 px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="font-medium">{formatMarketLabel(first.market)}</div>
+                      <div className="font-mono text-xs tabular-nums text-muted-foreground">{formatLocalMinute(first.capturedAt)}</div>
+                    </div>
+                    <MarketGrid group={group} homeTeam={homeTeam} awayTeam={awayTeam} />
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
 }
 
 export function OddsSourceTable({

@@ -4,6 +4,9 @@
   "private": true,
   "packageManager": "pnpm@10.32.1",
   "scripts": {
+    "setup": "tsx src/scripts/setup.ts",
+    "setup:local": "tsx src/scripts/setup.ts",
+    "setup:agents": "tsx src/scripts/setup-agents.ts",
     "dev": "next dev --port 3107",
     "build": "next build",
     "run": "next build && next start --port 3108",
@@ -17,6 +20,7 @@
     "sync:odds": "tsx src/scripts/sync-odds.ts",
     "capture:bw-odds": "tsx src/scripts/capture-bw-odds.ts",
     "capture:saba-odds": "tsx src/scripts/capture-saba-odds.ts",
+    "verify:skills": "tsx src/scripts/verify-codex-skills.ts",
     "record:placed-bet": "tsx src/scripts/record-placed-bet.ts",
     "backfill:predictions": "tsx src/scripts/backfill-prediction-results.ts",
     "test": "vitest run",

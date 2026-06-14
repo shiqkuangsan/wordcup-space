@@ -19,7 +19,7 @@
 
 ## 数据策略
 
-参见 [docs/data-sources.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/data-sources.md:1)。
+参见 [docs/data-sources.md](docs/data-sources.md)。
 
 初始方向：
 
@@ -32,15 +32,62 @@
 
 ## 操作规则
 
-参见 [docs/operating-playbook.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/operating-playbook.md:1)。
+参见 [docs/operating-playbook.md](docs/operating-playbook.md)。
 
-系统端到端流程参见 [docs/system-workflow.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/system-workflow.md:1)，包含赛程同步、盘口录入、决策、执行、成交、结算、账本和复盘闭环。
+## 在 Codex 里使用
 
-口述、截图和下注凭证交给 Codex 处理的格式参见 [docs/codex-capture-guide.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/codex-capture-guide.md:1)。
+本仓库内置 repo-local skills，别人 clone 后也可以在 Codex 里直接触发项目能力，不依赖原维护者的全局 Codex 配置。
+
+入口文档见 [docs/codex-usage.md](docs/codex-usage.md)。
+
+新用户推荐初始化：
+
+```bash
+pnpm install
+pnpm run setup:local
+```
+
+如果需要本地安装 sports-skills CLI 辅助足球数据和赔率计算：
+
+```bash
+pnpm setup:agents
+```
+
+`pnpm run setup:local` 会复制 `.env.example`、迁移数据库、写入默认账本/风险配置、同步世界杯赛程，并校验 `.agents/skills` 是否完整。
+
+不要执行裸的 `pnpm setup`；这是 pnpm 自己的全局配置命令，不是本项目初始化命令。
+
+推荐触发方式：
+
+```text
+使用 wordcup-space，帮我初始化本地世界杯工作台。
+```
+
+```text
+使用 wordcup-space，分析明天四场比赛，先预测比分，再给单关和串关计划。
+```
+
+```text
+使用 wordcup-space，我发一张下注成功截图，你帮我 dry-run 录入。
+```
+
+可直接使用的能力：
+
+- 比分预测和预测命中复盘：`.agents/skills/codex-match-predictor`
+- 下注分析、单关、串关、风控和下注记录：`.agents/skills/codex-betting-operator`
+- SABA/BW 盘口采集：`pnpm capture:saba-odds`
+- 已成交注单录入：`pnpm record:placed-bet`
+- 赛后结算和复盘：本地 API + Codex 操作流程
+
+真实下注提交不自动化。Codex 可以分析、准备计划、解析截图和记录系统数据，但外部平台最后提交必须由本地用户确认。
+
+系统端到端流程参见 [docs/system-workflow.md](docs/system-workflow.md)，包含赛程同步、盘口录入、决策、执行、成交、结算、账本和复盘闭环。
+
+口述、截图和下注凭证交给 Codex 处理的格式参见 [docs/codex-capture-guide.md](docs/codex-capture-guide.md)。
 
 聊天窗口是默认录入入口；页面表单只是备用。Codex 代操作已成交注单时，先用 `pnpm record:placed-bet` dry-run，得到你确认后才加 `--write` 写库。
 
-外部 provider 与 Codex 工作流接入参见 [docs/provider-agent-integration.md](/Users/zhuguidong/WorkSpace/PrivateSpace/wordcup-space/docs/provider-agent-integration.md:1)。
+外部 provider 与 Codex 工作流接入参见 [docs/provider-agent-integration.md](docs/provider-agent-integration.md)。
 
 关键默认值：
 

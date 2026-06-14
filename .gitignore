@@ -1,7 +1,13 @@
 .catpaw/
-.agents/*
-!.agents/skills/
-!.agents/skills/**
+
+# Agent project assets are tracked by default.
+# Only local runtimes, caches, and generated Python artifacts are ignored.
+.agents/sports-skills-venv/
+.agents/.venv/
+.agents/cache/
+.agents/tmp/
+.agents/**/*.pyc
+.agents/**/__pycache__/
 .env
 .env.*
 !.env.example

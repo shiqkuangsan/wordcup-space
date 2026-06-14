@@ -1,23 +1,41 @@
 {
   "version": 1,
   "skills": {
+    "wordcup-space": {
+      "source": "repo-local",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/wordcup-space/SKILL.md",
+      "computedHash": "278b7db3c48360539631f003d052d35d24cb2db331545c35a9c7ce1868ee1540"
+    },
+    "codex-match-predictor": {
+      "source": "repo-local",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/codex-match-predictor/SKILL.md",
+      "computedHash": "87e87bbcf303fceb56f90483723ebe49e2088574d1c14f7787d74543e8a38207"
+    },
+    "codex-betting-operator": {
+      "source": "repo-local",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/codex-betting-operator/SKILL.md",
+      "computedHash": "dc8829f9070528c6dc8bdc90d366b8149ffb3cf18eb8e441b7a01c0771b64e67"
+    },
     "betting": {
       "source": "machina-sports/sports-skills",
       "sourceType": "github",
-      "skillPath": "skills/betting/SKILL.md",
-      "computedHash": "68553920d1e81e540a915509c5ccd1854862c7610adb4608605fdfe410ac25d1"
+      "skillPath": ".agents/skills/betting/SKILL.md",
+      "computedHash": "b03000178c99cd880c99a957391e6c9c4f3b481133f825ca640f6e9f402d994a"
     },
     "football-data": {
       "source": "machina-sports/sports-skills",
       "sourceType": "github",
-      "skillPath": "skills/football-data/SKILL.md",
-      "computedHash": "0f73f9a953adc04fe939fc944da8b4e6c36d88ac50d52298a1beafc007a8bf4e"
+      "skillPath": ".agents/skills/football-data/SKILL.md",
+      "computedHash": "59236d7e404991b95f30f72380b303fc40c4a0cd548ab3add638c7f2a6b7a11c"
     },
     "markets": {
       "source": "machina-sports/sports-skills",
       "sourceType": "github",
-      "skillPath": "skills/markets/SKILL.md",
-      "computedHash": "d1661966b265b7f0b2c2179f301f8732b30a783b934482766de4190305d221f8"
+      "skillPath": ".agents/skills/markets/SKILL.md",
+      "computedHash": "8c046c258e9bbe4798af9793bac06c7d4ad790c0f4e529ba25f6b339425bf219"
     }
   }
 }

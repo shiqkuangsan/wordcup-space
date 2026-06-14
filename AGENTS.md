@@ -23,6 +23,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Codex 比赛分析接入
 
+- 本仓库面向其他 Codex 用户时，优先使用 repo-local skills；入口是 `.agents/skills/wordcup-space/SKILL.md`。不要要求外部用户拥有原维护者的全局 Codex skill、Betway 登录态、`local.db`、资金余额或私有 API key。
+- 新 clone 的用户必须初始化自己的 `.env`、数据库、平台账户、User/Codex 账本和风险规则。外部用户的默认使用说明见 `docs/codex-usage.md`。
+- 对外分发时，`AGENTS.md` 和 `.agents/skills/*` 是 Codex 能力的主要载体；Web/API/CLI 是执行面。修改预测、下注、串关或录单规则时，要同步检查这三层是否一致。
 - 外部 provider / agent 工具边界参见 `docs/provider-agent-integration.md`。
 - 创建 Codex 决策前，先按 `docs/codex-analysis-contract.md` 形成结构化分析，并默认走 `/api/intents` 的 `dryRun: true`。
 - 当 Codex 做赛前比分预测、每周预测、预测命中复盘或写入 `/api/predictions` 时，优先使用项目 skill `.agents/skills/codex-match-predictor/SKILL.md`。

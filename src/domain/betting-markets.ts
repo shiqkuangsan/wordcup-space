@@ -7,6 +7,7 @@ export type MarketType =
   | "total"
   | "total_goals"
   | "total_goals_range"
+  | "double_chance"
   | "nth_goal"
   | "highest_scoring_half"
   | "both_teams_to_score"
@@ -26,6 +27,7 @@ export const MARKET_TYPE_OPTIONS: Array<{ value: MarketType; label: string; need
   { value: "total", label: "大小球", needsLine: true },
   { value: "total_goals", label: "总进球", needsLine: true },
   { value: "total_goals_range", label: "总进球范围", needsLine: false },
+  { value: "double_chance", label: "双重机会", needsLine: false },
   { value: "nth_goal", label: "第 N 个进球球队", needsLine: true },
   { value: "highest_scoring_half", label: "进球最多的半场", needsLine: false },
   { value: "both_teams_to_score", label: "双方进球", needsLine: false },

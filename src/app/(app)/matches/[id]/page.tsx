@@ -1,14 +1,9 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CodexAnalysisPanel } from "@/components/matches/codex-analysis-panel";
-import { MatchResultForm } from "@/components/matches/match-result-form";
-import { OddsSourceTable } from "@/components/matches/odds-source-table";
-import { OddsEntryForm } from "@/components/matches/odds-entry-form";
+import { MatchOddsBoard } from "@/components/matches/odds-source-table";
 import { getDb } from "@/db/client";
 import {
   betIntentLegs,
@@ -25,24 +20,11 @@ import { formatLocalMinute } from "@/domain/dates";
 import { formatMatchStage, formatMatchStatus } from "@/domain/match-sync";
 import { getMatchWorkflowStatus } from "@/domain/match-workflow";
 import { formatCny } from "@/domain/money";
-import { analyzeOddsSnapshot, devigMarketProbabilities } from "@/domain/odds-analysis";
 import { formatMatchTitle } from "@/domain/team-names";
 
 export const dynamic = "force-dynamic";
 
 type OddsSnapshot = typeof oddsSnapshots.$inferSelect;
-
-function getLatestOddsGroup(odds: OddsSnapshot[]) {
-  const latestOdds = odds[0];
-  if (!latestOdds) return [];
-
-  return odds.filter(
-    (snapshot) =>
-      snapshot.bookmaker === latestOdds.bookmaker &&
-      snapshot.market === latestOdds.market &&
-      snapshot.capturedAt === latestOdds.capturedAt,
-  );
-}
 
 function getLatestOddsGroupsBySource(odds: OddsSnapshot[]) {
   const groups = new Map<string, OddsSnapshot[]>();
@@ -60,23 +42,6 @@ function getLatestOddsGroupsBySource(odds: OddsSnapshot[]) {
   }
 
   return Array.from(groups.values());
-}
-
-function getWorkflowCta(key: ReturnType<typeof getMatchWorkflowStatus>["key"], matchId: string) {
-  switch (key) {
-    case "needs_odds":
-      return { label: "去录盘口", href: "#odds-entry" };
-    case "needs_analysis":
-      return { label: "生成 dry-run", href: "#codex-analysis" };
-    case "needs_execution":
-      return { label: "去决策队列", href: `/intents?matchId=${encodeURIComponent(matchId)}` };
-    case "waiting_result":
-      return { label: "记录赛果", href: "#match-result" };
-    case "needs_settlement":
-      return { label: "去结算", href: `/bets?matchId=${encodeURIComponent(matchId)}` };
-    case "needs_review":
-      return { label: "看结算记录", href: "#settlements" };
-  }
 }
 
 export default async function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -117,28 +82,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     slipCount: slips.length,
     openSlipCount: openSlips.length,
   });
-  const workflowCta = getWorkflowCta(workflow.key, id);
-  const latestOdds = odds[0];
-  const latestMarketOdds = getLatestOddsGroup(odds);
   const latestOddsGroups = getLatestOddsGroupsBySource(odds);
-  const latestMarketAnalysis =
-    latestMarketOdds.length >= 2
-      ? devigMarketProbabilities(
-          latestMarketOdds
-            .slice()
-            .reverse()
-            .map((snapshot) => ({ id: snapshot.selection, decimalOdds: snapshot.decimalOdds })),
-        )
-      : null;
-  const oddsOptions = odds.map((snapshot) => ({
-    id: snapshot.id,
-    bookmaker: snapshot.bookmaker,
-    market: snapshot.market,
-    selection: snapshot.selection,
-    line: snapshot.line,
-    decimalOdds: snapshot.decimalOdds,
-    capturedAt: snapshot.capturedAt,
-  }));
 
   return (
     <div className="space-y-6">
@@ -181,39 +125,23 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>来源盘口</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <OddsSourceTable groups={latestOddsGroups} homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>下一步</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3">
-          <div className="max-w-2xl">
-            <div className="font-medium">{workflow.nextAction}</div>
-            <p className="text-sm text-muted-foreground">{workflow.description}</p>
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h3 className="text-lg font-semibold">盘口信息</h3>
+            <p className="text-sm text-muted-foreground">只读查看当前比赛已保存的最新盘口快照。</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge>{workflow.label}</Badge>
-            <Button asChild>
-              <Link href={workflowCta.href}>{workflowCta.label}</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          <Badge variant="outline">{odds.length} 条 snapshot</Badge>
+        </div>
+        <MatchOddsBoard groups={latestOddsGroups} homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+      </section>
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader><CardTitle>盘口</CardTitle></CardHeader>
           <CardContent className="space-y-1 text-sm text-muted-foreground">
             <div>{odds.length} 条 snapshot</div>
-            <div>{latestOdds ? `${latestOdds.bookmaker} · ${latestOdds.market} · ${latestOdds.decimalOdds}` : "暂无盘口"}</div>
+            <div>{latestOddsGroups.length} 个最新盘口组</div>
           </CardContent>
         </Card>
         <Link href={`/intents?matchId=${encodeURIComponent(id)}`} className="block">
@@ -238,68 +166,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </Link>
       </div>
 
-      <Tabs defaultValue="analysis" className="space-y-4">
-        <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="analysis">赛前分析</TabsTrigger>
-          <TabsTrigger value="execution">执行记录</TabsTrigger>
-          <TabsTrigger value="postmatch">赛后结算</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="analysis" className="space-y-4">
-          <div id="codex-analysis" className="scroll-mt-4">
-            <CodexAnalysisPanel matchId={id} oddsOptions={oddsOptions} />
-          </div>
-
-          <div id="odds-entry" className="scroll-mt-4">
-            <OddsEntryForm matchId={id} />
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>赔率快照</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {latestMarketAnalysis ? (
-                <div className="rounded-md border bg-muted/30 p-3 text-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="font-medium">
-                      最近盘口组 · {latestOdds?.bookmaker} · {latestOdds?.market}
-                    </div>
-                    <div className="font-mono text-xs tabular-nums text-muted-foreground">
-                      overround {(latestMarketAnalysis.overround * 100).toFixed(2)}%
-                    </div>
-                  </div>
-                  <div className="mt-2 grid gap-2 md:grid-cols-3">
-                    {latestMarketAnalysis.outcomes.map((outcome) => (
-                      <div key={outcome.id} className="rounded border bg-background px-2 py-1.5">
-                        <div className="truncate font-medium">{outcome.id}</div>
-                        <div className="font-mono text-xs text-muted-foreground">
-                          fair {(outcome.fairProbability * 100).toFixed(1)}% · 公允 {outcome.fairOdds.toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {odds.slice(0, 8).map((snapshot) => (
-                <div key={snapshot.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
-                  <div className="font-medium">
-                    {snapshot.bookmaker} · {snapshot.market} · {snapshot.selection}
-                    {snapshot.line ? ` ${snapshot.line}` : ""}
-                  </div>
-                  <div className="font-mono text-xs tabular-nums text-muted-foreground">
-                    {snapshot.decimalOdds.toFixed(2)} · implied{" "}
-                    {(analyzeOddsSnapshot({ decimalOdds: snapshot.decimalOdds }).impliedProbability * 100).toFixed(1)}% ·{" "}
-                    {formatLocalMinute(snapshot.capturedAt)}
-                  </div>
-                </div>
-              ))}
-              {odds.length === 0 ? <p className="text-sm text-muted-foreground">暂无赔率快照。</p> : null}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="execution" className="grid gap-4 lg:grid-cols-3">
+      <section className="grid gap-4 lg:grid-cols-3">
           <Card>
             <CardHeader>
               <CardTitle>决策 intent</CardTitle>
@@ -368,50 +235,17 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
               {slips.length === 0 ? <p className="text-muted-foreground">暂无 slip。</p> : null}
             </CardContent>
           </Card>
-        </TabsContent>
+      </section>
 
-        <TabsContent value="postmatch" className="space-y-4">
-          <div id="match-result" className="scroll-mt-4">
-            <MatchResultForm matchId={id} latestResult={latestResult} />
-          </div>
-
-          {hasSettlementCandidates ? (
-            <Card id="settlement-prompt" className="scroll-mt-4">
-              <CardHeader>
-                <CardTitle>待结算提示</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <p className="text-muted-foreground">
-                  比赛已记录结束，存在 {openSlips.length} 张未结算 slip。系统只提示，不会自动结算或改动资金。
-                </p>
-                <div className="space-y-2">
-                  {openSlips.map((slip) => (
-                    <div key={slip.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2">
-                      <span className="font-mono text-xs">{slip.id}</span>
-                      <span>
-                        stake {formatCny(slip.stakeCents)} · odds {slip.finalOdds.toFixed(2)} · potential{" "}
-                        {formatCny(slip.potentialReturnCents)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <Link href="/bets" className="inline-flex text-sm font-medium underline underline-offset-4">
-                  去注单中心结算
-                </Link>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card id="settlements" className="scroll-mt-4">
-            <CardHeader>
-              <CardTitle>结算记录</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              {settlementRows.length ? `${settlementRows.length} 条 settlement 已记录。` : "暂无 settlement。"}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <Card id="settlements" className="scroll-mt-4">
+        <CardHeader>
+          <CardTitle>结算记录</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <div>{settlementRows.length ? `${settlementRows.length} 条 settlement 已记录。` : "暂无 settlement。"}</div>
+          {hasSettlementCandidates ? <div>存在 {openSlips.length} 张未结算 slip；此页只提示，不处理。</div> : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }
