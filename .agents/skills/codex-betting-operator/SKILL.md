@@ -271,6 +271,13 @@ sample of settled bets by market type:
 - For live betting, require a concrete trigger such as red card, injury,
   tactical dominance, shot/territory pressure, or abnormal odds movement. A live
   scoreline merely matching Codex's prediction is not enough.
+- Allow small contrarian bets when the original analysis starts failing in
+  real time. A contrarian bet is not emotional revenge betting: it needs a
+  visible trigger such as sustained pressure by the side Codex discounted,
+  home/co-host energy, repeated failed entries by the favorite, lineup mismatch,
+  market drift, or a score/tempo path that exposes the pre-match thesis. Keep
+  the stake small, state the failed-thesis branch being bought, and do not let
+  the contrarian ticket erase the original portfolio discipline.
 - For live hedging, calculate at least two branches before judging the stake:
   the protected branch where the original tickets still win, and the adverse
   branch where the hedge wins while the original tickets lose. Use the hedge
