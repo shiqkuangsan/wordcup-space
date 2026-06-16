@@ -102,11 +102,94 @@ function sortSelections(a: OddsSnapshot, b: OddsSnapshot) {
   return a.selection.localeCompare(b.selection);
 }
 
+type CorrectScoreSelection =
+  | {
+      type: "score";
+      homeScore: number;
+      awayScore: number;
+    }
+  | {
+      type: "aos";
+    }
+  | {
+      type: "unknown";
+    };
+
+function parseCorrectScoreSelection(selection: string): CorrectScoreSelection {
+  if (selection.toLowerCase() === "aos") return { type: "aos" };
+  const match = selection.match(/^(\d+)-(\d+)$/);
+  if (!match) return { type: "unknown" };
+
+  return {
+    type: "score",
+    homeScore: Number(match[1]),
+    awayScore: Number(match[2]),
+  };
+}
+
+function formatCorrectScoreLabel(selection: string) {
+  return selection.toLowerCase() === "aos" ? "AOS 其他比分" : selection;
+}
+
+function compareCorrectScores(a: OddsSnapshot, b: OddsSnapshot) {
+  const parsedA = parseCorrectScoreSelection(a.selection);
+  const parsedB = parseCorrectScoreSelection(b.selection);
+
+  if (parsedA.type === "aos") return 1;
+  if (parsedB.type === "aos") return -1;
+  if (parsedA.type !== "score" || parsedB.type !== "score") return a.selection.localeCompare(b.selection);
+
+  if (parsedA.homeScore !== parsedB.homeScore) return parsedA.homeScore - parsedB.homeScore;
+  return parsedA.awayScore - parsedB.awayScore;
+}
+
 function OddsBox({ snapshot, label }: { snapshot?: OddsSnapshot; label?: string }) {
   return (
     <div className="min-h-14 rounded-md border bg-background px-3 py-2 text-sm shadow-sm">
       <div className="truncate text-xs text-muted-foreground">{label ?? snapshot?.selection ?? "--"}</div>
       <div className="mt-1 font-mono text-lg font-semibold tabular-nums">{snapshot ? snapshot.decimalOdds.toFixed(2) : "--"}</div>
+    </div>
+  );
+}
+
+function CorrectScoreBoard({ group, homeTeam, awayTeam }: { group: OddsSnapshot[]; homeTeam: string; awayTeam: string }) {
+  const columns = {
+    home: [] as OddsSnapshot[],
+    draw: [] as OddsSnapshot[],
+    away: [] as OddsSnapshot[],
+  };
+
+  for (const snapshot of group) {
+    const parsed = parseCorrectScoreSelection(snapshot.selection);
+    if (parsed.type === "aos") {
+      columns.draw.push(snapshot);
+      continue;
+    }
+    if (parsed.type !== "score") {
+      columns.draw.push(snapshot);
+      continue;
+    }
+    if (parsed.homeScore > parsed.awayScore) columns.home.push(snapshot);
+    else if (parsed.homeScore < parsed.awayScore) columns.away.push(snapshot);
+    else columns.draw.push(snapshot);
+  }
+
+  const correctScoreColumns = [
+    { key: "home", title: `${formatTeamName(homeTeam)} 胜`, snapshots: columns.home },
+    { key: "draw", title: "和局", snapshots: columns.draw },
+    { key: "away", title: `${formatTeamName(awayTeam)} 胜`, snapshots: columns.away },
+  ];
+
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {correctScoreColumns.map((column) => (
+        <div key={column.key} className="space-y-2">
+          <div className="truncate text-center text-xs font-medium text-muted-foreground">{column.title}</div>
+          {column.snapshots.slice().sort(compareCorrectScores).map((snapshot) => (
+            <OddsBox key={snapshot.id} snapshot={snapshot} label={formatCorrectScoreLabel(snapshot.selection)} />
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -126,6 +209,10 @@ function MarketGrid({ group, homeTeam, awayTeam }: { group: OddsSnapshot[]; home
         <OddsBox snapshot={away} label={`2 ${formatTeamName(awayTeam)}`} />
       </div>
     );
+  }
+
+  if (market.endsWith(":correct_score")) {
+    return <CorrectScoreBoard group={group} homeTeam={homeTeam} awayTeam={awayTeam} />;
   }
 
   if (market.endsWith(":handicap") || market.endsWith(":total")) {
