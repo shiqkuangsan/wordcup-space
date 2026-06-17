@@ -7,5 +7,6 @@ describe("SABA odds helpers", () => {
     expect(formatTeamName("突尼西亚")).toBe("突尼斯");
     expect(formatTeamName("沙地阿拉伯")).toBe("沙特阿拉伯");
     expect(formatTeamName("纽西兰")).toBe("新西兰");
+    expect(formatTeamName("乌兹别克")).toBe("乌兹别克斯坦");
   });
 });

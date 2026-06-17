@@ -193,6 +193,7 @@ const TEAM_NAME_ALIASES: Record<string, string> = {
   ukraine: "乌克兰",
   uzb: "乌兹别克斯坦",
   uzbekistan: "乌兹别克斯坦",
+  乌兹别克: "乌兹别克斯坦",
   uru: "乌拉圭",
   uruguay: "乌拉圭",
   usa: "美国",
