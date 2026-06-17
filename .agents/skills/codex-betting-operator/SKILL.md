@@ -98,6 +98,19 @@ package:
 - include at least one lower-variance 2-leg option when building 3-leg or 4-leg
   upside variants;
 - clearly mark which parlays are core, small-test, or upside-only.
+- Prefer the cleanest market expression for the thesis before choosing stake.
+  A correct match read can still become a bad bet if expressed through a fragile
+  full-time total, quarter handicap, or low-value favorite. Compare equivalent
+  expressions such as half-time total vs full-time total, team total vs match
+  total, handicap vs moneyline, and single vs parlay leg; select the one whose
+  settlement path matches the evidence with the fewest unrelated failure modes.
+- System parlays such as `4串11` are not the same as a single `4串1`. When a
+  bookmaker ticket packages 2-leg, 3-leg, and 4-leg components under one order
+  number, record or reason about each component separately. The order-level
+  stake is the sum of component stakes, and the order-level `可赢金额` may be net
+  profit rather than total return. For local recording, split into component
+  slips using a shared confirmation prefix, for example `<order>-C01`, so partial
+  settlement and bankroll math remain correct.
 
 For each parlay execution package, include at least one correct-score parlay
 candidate unless the market is unavailable or prices cannot be verified. A
@@ -305,6 +318,12 @@ sample of settled bets by market type:
 - Prefer market-shape edges when winner edges are weak. Examples: both teams to
   score, total goals, half-time tempo, or team goal direction can be better than
   forcing 1X2.
+- Treat half-time markets as first-class expressions, not side curiosities.
+  When the evidence is about a cautious start, early tactical control, or a
+  favorite asserting superiority before game state opens up, half-time totals or
+  half-time handicaps can be cleaner than full-time markets. Do not generalize a
+  half-time thesis into a full-time bet unless the late-match scoring and
+  substitution risk are also part of the edge.
 - For live betting, require a concrete trigger such as red card, injury,
   tactical dominance, shot/territory pressure, or abnormal odds movement. A live
   scoreline merely matching Codex's prediction is not enough.

@@ -172,6 +172,15 @@ pnpm record:placed-bet -- --input payload.json --write
 
 注意：部分平台的“可赢金额”只显示盈利，不含本金。系统的 `potentialReturnCents` 记录返还总额，等于 `stake * finalOdds`，不是只记录盈利。
 
+组合串关，例如 Betway `4串11`、`3串4`，不能当成单张普通 `4串1` 入库。当前系统没有 order-level system parlay 模型时，按 component 拆分成多张 `mode: "parlay"` 记录：
+
+| 平台类型 | 拆分方式 |
+|---|---|
+| `3串4` | 3 张 `2串1` + 1 张 `3串1` |
+| `4串11` | 6 张 `2串1` + 4 张 `3串1` + 1 张 `4串1` |
+
+每个 component 使用自己的 component stake 和 component odds，`confirmationRef` 使用原始单号加后缀，例如 `2606161120330199-C01`。这样部分命中、全中和全输都能按真实结算路径更新资金。若平台显示“可赢金额”是净赢利，核对时用 `sum(component potentialReturn) - totalStake` 对齐平台数字。
+
 如果不是世界杯赛程库里的比赛，可以不传 `matchId`，改传 `matchText`：
 
 ```json

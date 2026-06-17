@@ -17,7 +17,7 @@
       "source": "repo-local",
       "sourceType": "local",
       "skillPath": ".agents/skills/codex-betting-operator/SKILL.md",
-      "computedHash": "dc8829f9070528c6dc8bdc90d366b8149ffb3cf18eb8e441b7a01c0771b64e67"
+      "computedHash": "99c2834d46ad1c42d17ba5d03d84fea82dc0fdcd9e84a8e9a9b8b0202fe90817"
     },
     "betting": {
       "source": "machina-sports/sports-skills",
