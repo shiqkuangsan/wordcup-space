@@ -47,13 +47,26 @@ Prediction is separate from betting:
      2026 World Cup;
    - tactical matchup and likely scoring environment;
    - opposing evidence.
-5. Decide one of three actions:
+5. Build a structured probability baseline before choosing a scoreline:
+   - Prefer the local TypeScript model in `src/domain/prediction-model.ts` when
+     team ratings or a justified rating proxy are available.
+   - The model output must include `modelVersion`, expected goals, win/draw/loss
+     probabilities, top score distribution, and a `mainPrediction`.
+   - The headline score must match the headline outcome direction. If the
+     single most likely score is a draw but the highest outcome probability is a
+     home win, the draw can only be listed as a score-distribution reference.
+   - Store the model output as `modelSnapshot` when calling
+     `POST /api/predictions`; it will be preserved in `sources_json` alongside
+     human-readable sources.
+   - If ratings are missing or stale, do not fabricate a model. Mark the model
+     baseline as unavailable and rely on evidence notes instead.
+6. Decide one of three actions:
    - `predict`: produce a scoreline, confidence, rationale, and risk note;
    - `defer`: wait for more information such as odds, lineup, injuries, or weather;
    - `abstain`: explicitly do not predict because the information quality is too poor or the match context is outside Codex's current edge.
-6. Write only `predict` decisions through `POST /api/predictions` when the app service is available. Do not create fake score rows for `defer` or `abstain` unless the app later adds a first-class abstention record type.
-7. When rerun before kickoff, re-check new information and update an existing prediction if the new evidence materially changes the view. Record the changed rationale and risk note.
-8. After final result is known, update the same prediction with actual score and hit flags.
+7. Write only `predict` decisions through `POST /api/predictions` when the app service is available. Do not create fake score rows for `defer` or `abstain` unless the app later adds a first-class abstention record type.
+8. When rerun before kickoff, re-check new information and update an existing prediction if the new evidence materially changes the view. Record the changed rationale and risk note.
+9. After final result is known, update the same prediction with actual score and hit flags.
 
 ## Prediction Gate
 
@@ -61,6 +74,11 @@ Prediction is separate from betting:
 - Default to `defer` unless there is enough edge to justify a concrete scoreline.
 - Do not write a score prediction when the final decision is low confidence. Low confidence means "watch", not "publish a weak prediction".
 - A `predict` action should usually have at least one concrete anchor: live market baseline, verified team news, stable strength gap, matchup edge, or a clear tactical scoring environment.
+- A local probability model is an anchor only when its input ratings are named
+  and defensible. It is not an excuse to publish weak predictions from stale
+  sample ratings.
+- When model probability and qualitative evidence disagree, downgrade
+  confidence or `defer`; do not hide the disagreement.
 - For 2026 World Cup matches involving USA, Canada, or Mexico, explicitly assess
   home/co-host advantage. This factor can support edge or confidence, but it
   must not automatically force a home-win prediction.
@@ -116,6 +134,8 @@ Required fields:
 - `dataMode`: `offline`, `prior_analysis`, or `live_research`
 - `rationale`
 - `riskNote`
+- `modelSnapshot`: optional structured probability output from
+  `src/domain/prediction-model.ts`, saved with `sources_json`
 
 Optional final-result fields:
 
@@ -134,6 +154,7 @@ Codex 预测：
 动作：预测 / 暂缓 / 不预测
 预测比分：仅在动作为“预测”时填写
 置信度：
+模型底座：可用 / 不可用；若可用，写 expected goals、胜/平/负概率、模型版本
 依据：
 风险：
 是否转下注：否/观察/另行评估

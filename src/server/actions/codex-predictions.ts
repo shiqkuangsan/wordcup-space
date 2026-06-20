@@ -5,6 +5,12 @@ import { codexPredictions, matches } from "@/db/schema";
 import { getScoreOutcome } from "@/domain/predictions";
 import { createId } from "@/server/actions/ids";
 
+const predictionSourceSchema = z.object({
+  title: z.string().min(1),
+  url: z.string().min(1).optional(),
+  note: z.string().optional(),
+});
+
 const upsertCodexPredictionSchema = z.object({
   id: z.string().min(1).optional(),
   matchId: z.string().min(1),
@@ -17,11 +23,8 @@ const upsertCodexPredictionSchema = z.object({
   dataMode: z.string().min(1).default("offline"),
   rationale: z.string().min(1),
   riskNote: z.string().min(1),
-  sources: z.array(z.object({
-    title: z.string().min(1),
-    url: z.string().min(1).optional(),
-    note: z.string().optional(),
-  })).optional(),
+  sources: z.array(predictionSourceSchema).optional(),
+  modelSnapshot: z.record(z.string(), z.unknown()).optional(),
   status: z.string().min(1).default("predicted"),
   predictedAt: z.string().min(1).optional(),
   actualHomeScore: z.number().int().nonnegative().optional(),
@@ -30,6 +33,23 @@ const upsertCodexPredictionSchema = z.object({
   resultSourceNote: z.string().optional(),
   resultCheckedAt: z.string().optional(),
 });
+
+function serializePredictionEvidence({
+  sources,
+  modelSnapshot,
+}: {
+  sources?: Array<z.infer<typeof predictionSourceSchema>>;
+  modelSnapshot?: Record<string, unknown>;
+}) {
+  if (modelSnapshot) {
+    return JSON.stringify({
+      sources: sources ?? [],
+      modelSnapshot,
+    });
+  }
+
+  return sources ? JSON.stringify(sources) : undefined;
+}
 
 export async function upsertCodexPrediction(input: z.input<typeof upsertCodexPredictionSchema>) {
   const data = upsertCodexPredictionSchema.parse(input);
@@ -61,7 +81,7 @@ export async function upsertCodexPrediction(input: z.input<typeof upsertCodexPre
     dataMode: data.dataMode,
     rationale: data.rationale,
     riskNote: data.riskNote,
-    sourcesJson: data.sources ? JSON.stringify(data.sources) : undefined,
+    sourcesJson: serializePredictionEvidence({ sources: data.sources, modelSnapshot: data.modelSnapshot }),
     status,
     predictedAt: data.predictedAt ?? now,
     actualHomeScore: data.actualHomeScore,

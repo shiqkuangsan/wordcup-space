@@ -11,13 +11,13 @@
       "source": "repo-local",
       "sourceType": "local",
       "skillPath": ".agents/skills/codex-match-predictor/SKILL.md",
-      "computedHash": "87e87bbcf303fceb56f90483723ebe49e2088574d1c14f7787d74543e8a38207"
+      "computedHash": "d1a05eb6e3b5f6272da41ceb895847b6191339fabca63e4fe25f1e4b916e86fb"
     },
     "codex-betting-operator": {
       "source": "repo-local",
       "sourceType": "local",
       "skillPath": ".agents/skills/codex-betting-operator/SKILL.md",
-      "computedHash": "99c2834d46ad1c42d17ba5d03d84fea82dc0fdcd9e84a8e9a9b8b0202fe90817"
+      "computedHash": "c7976265f9048ae26deed1c140fead384a3e0fffbc3e99f443db599ad4382cb6"
     },
     "betting": {
       "source": "machina-sports/sports-skills",
