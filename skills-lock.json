@@ -11,7 +11,7 @@
       "source": "repo-local",
       "sourceType": "local",
       "skillPath": ".agents/skills/codex-match-predictor/SKILL.md",
-      "computedHash": "d1a05eb6e3b5f6272da41ceb895847b6191339fabca63e4fe25f1e4b916e86fb"
+      "computedHash": "3dd11770d2c9e63b612fd062baee930f43daa6f31f0bb684ded04b0827d81388"
     },
     "codex-betting-operator": {
       "source": "repo-local",
@@ -29,7 +29,7 @@
       "source": "machina-sports/sports-skills",
       "sourceType": "github",
       "skillPath": ".agents/skills/football-data/SKILL.md",
-      "computedHash": "59236d7e404991b95f30f72380b303fc40c4a0cd548ab3add638c7f2a6b7a11c"
+      "computedHash": "cd2256b1e7963649003bbac89f06561d165badd3b865f08318658d860af918ee"
     },
     "markets": {
       "source": "machina-sports/sports-skills",

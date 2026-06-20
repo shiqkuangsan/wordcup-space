@@ -17,7 +17,21 @@ Before writing queries, consult `references/api-reference.md` for endpoints, ID 
 
 ## Setup
 
-Before first use, check if the CLI is available:
+Before first use in `wordcup-space`, check the project-local virtualenv first:
+```bash
+test -x .agents/sports-skills-venv/bin/sports-skills && .agents/sports-skills-venv/bin/sports-skills --version
+```
+
+If the project-local CLI is missing, install it through the repository setup
+script:
+
+```bash
+pnpm setup:agents
+```
+
+Only fall back to a global install when you are outside a repo with
+`.agents/sports-skills-venv/`:
+
 ```bash
 which sports-skills || pip install sports-skills
 ```
@@ -37,8 +51,8 @@ No API keys required.
 
 Prefer the CLI — it avoids Python import path issues:
 ```bash
-sports-skills football get_daily_schedule
-sports-skills football get_season_standings --season_id=premier-league-2025
+.agents/sports-skills-venv/bin/sports-skills football get_daily_schedule
+.agents/sports-skills-venv/bin/sports-skills football get_season_standings --season_id=premier-league-2025
 ```
 
 Python SDK (alternative):

@@ -60,6 +60,10 @@ Prediction is separate from betting:
      human-readable sources.
    - If ratings are missing or stale, do not fabricate a model. Mark the model
      baseline as unavailable and rely on evidence notes instead.
+   - Keep runtime diagnostics out of user-facing prediction summaries. Do not
+     display phrases such as "CLI unavailable", package paths, or installation
+     failures as the model baseline. User-facing text should say what evidence
+     was used, for example "模型底座未启用；本次使用赔率、小组形势和公开队伍信息"。
 6. Decide one of three actions:
    - `predict`: produce a scoreline, confidence, rationale, and risk note;
    - `defer`: wait for more information such as odds, lineup, injuries, or weather;
