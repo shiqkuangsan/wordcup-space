@@ -38,6 +38,9 @@ Prediction is separate from betting:
 3. Sort weekly candidates by kickoff time.
 4. For each candidate, gather the best available pre-match evidence:
    - current odds or market baseline when available;
+   - group standings, qualification path, third-place qualification pressure,
+     goal-difference incentives, and final-round opponent when in the group
+     stage;
    - recent form and strength signal;
    - injuries, suspensions, lineup or team-news uncertainty;
    - host-country or quasi-home advantage for USA, Canada, and Mexico in the
@@ -61,6 +64,11 @@ Prediction is separate from betting:
 - For 2026 World Cup matches involving USA, Canada, or Mexico, explicitly assess
   home/co-host advantage. This factor can support edge or confidence, but it
   must not automatically force a home-win prediction.
+- For group-stage matchweek two and three, explicitly assess qualification
+  incentives before publishing a scoreline. The 2026 format sends each group
+  top two plus the best eight third-placed teams to the round of 32, so points,
+  goal difference, goals scored, and final-round opponent can change whether a
+  team protects a draw, chases margin, or takes late risk.
 - Use `defer` for matches that need closer kickoff information, especially lineups, injury confirmation, late odds movement, weather, venue impact, or first-round form.
 - Use `abstain` when the match has no meaningful Codex edge even after checking available information.
 

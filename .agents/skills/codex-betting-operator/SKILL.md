@@ -229,12 +229,15 @@ Before a Codex autonomous bet, verify and summarize:
 
 1. Current Betway price and odds format.
 2. Market consensus or at least one independent odds reference.
-3. Recent form for both teams.
-4. Head-to-head record, with sample age and relevance called out.
-5. Team news: injuries, suspensions, expected lineup, or explicitly "not confirmed".
-6. Tactical/market rationale for the selected market, not only the match winner.
-7. Main opposing evidence.
-8. Stake, risk tier, minimum executable odds, and abandonment condition.
+3. Group-stage qualification context when applicable: current points, goal
+   difference, third-place path, final-round opponent, and whether the team
+   needs a result or margin.
+4. Recent form for both teams.
+5. Head-to-head record, with sample age and relevance called out.
+6. Team news: injuries, suspensions, expected lineup, or explicitly "not confirmed".
+7. Tactical/market rationale for the selected market, not only the match winner.
+8. Main opposing evidence.
+9. Stake, risk tier, minimum executable odds, and abandonment condition.
 
 If any of items 1, 2, 3, or 5 is missing, default recommendation is `wait`, not `bet`.
 
@@ -318,6 +321,12 @@ sample of settled bets by market type:
 - Prefer market-shape edges when winner edges are weak. Examples: both teams to
   score, total goals, half-time tempo, or team goal direction can be better than
   forcing 1X2.
+- In World Cup group play, motivation is a market input, not a narrative extra.
+  Matchweek two and three bets must account for the 2026 advancement format
+  (top two plus eight best third-place teams), current table, goal difference,
+  and final opponent. This can invalidate otherwise plausible totals or
+  handicaps: a team needing margin may be a better handicap/over candidate,
+  while two teams already well placed may protect a draw and weaken over bets.
 - Treat half-time markets as first-class expressions, not side curiosities.
   When the evidence is about a cautious start, early tactical control, or a
   favorite asserting superiority before game state opens up, half-time totals or
