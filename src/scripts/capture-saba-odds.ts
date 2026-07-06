@@ -1,4 +1,5 @@
 import { captureSabaOdds, type SabaCaptureScope } from "@/server/providers/saba-odds-api";
+import { assessOddsCaptureCompleteness } from "@/server/providers/odds-capture-completeness";
 
 function readFlag(name: string) {
   const index = process.argv.indexOf(name);
@@ -44,10 +45,12 @@ async function main() {
       title: `${match.homeTeam} vs ${match.awayTeam}`,
       kickoffAt: match.kickoffAt,
       sabaMatchId: match.sabaMatchId,
+      sabaMarketCount: match.sabaMarketCount,
       sabaTitle: match.sabaHomeTeam && match.sabaAwayTeam ? `${match.sabaHomeTeam} vs ${match.sabaAwayTeam}` : undefined,
       homeAwayMismatch: match.homeAwayMismatch,
       skippedReason: match.skippedReason,
       parsedCount: match.rows.length,
+      completeness: assessOddsCaptureCompleteness(match.rows),
       markets: Array.from(new Set(match.rows.map((row) => row.market))).sort(),
       preview: match.rows.slice(0, 20),
     })),

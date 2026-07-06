@@ -67,6 +67,7 @@ export type SabaCaptureMatchSummary = {
   awayTeam: string;
   kickoffAt: string;
   sabaMatchId?: number;
+  sabaMarketCount?: number;
   sabaHomeTeam?: string;
   sabaAwayTeam?: string;
   homeAwayMismatch?: boolean;
@@ -386,6 +387,26 @@ function getLocalMatchesForDate(localDate: string) {
     .all();
 }
 
+export function writeSabaOddsRows(rows: SabaOddsRow[]) {
+  if (rows.length === 0) return 0;
+  const values = rows.map((row) => ({
+    id: createId("odds"),
+    matchId: row.matchId,
+    bookmaker: row.bookmaker,
+    market: row.market,
+    selection: row.selection,
+    line: row.line,
+    decimalOdds: row.decimalOdds,
+    capturedAt: row.capturedAt,
+    createdBy: "codex" as const,
+    sourceActor: "codex",
+    sourceType: "saba_api",
+    sourceNote: row.sourceNote,
+  }));
+  getDb().insert(oddsSnapshots).values(values).run();
+  return values.length;
+}
+
 export async function captureSabaOdds(input: {
   localDate: string;
   scope?: SabaCaptureScope;
@@ -448,6 +469,7 @@ export async function captureSabaOdds(input: {
         awayTeam: localMatch.awayTeam,
         kickoffAt: localMatch.kickoffAt,
         sabaMatchId: sabaMainMatch.MatchId,
+        sabaMarketCount: sabaMainMatch.MarketCount,
         sabaHomeTeam: sabaTeams.homeTeam,
         sabaAwayTeam: sabaTeams.awayTeam,
         homeAwayMismatch,
@@ -468,6 +490,7 @@ export async function captureSabaOdds(input: {
       awayTeam: localMatch.awayTeam,
       kickoffAt: localMatch.kickoffAt,
       sabaMatchId: sabaMainMatch.MatchId,
+      sabaMarketCount: sabaMainMatch.MarketCount,
       sabaHomeTeam: sabaTeams.homeTeam,
       sabaAwayTeam: sabaTeams.awayTeam,
       homeAwayMismatch,
@@ -477,26 +500,7 @@ export async function captureSabaOdds(input: {
 
   let inserted = 0;
   if (input.write) {
-    const values = summaries.flatMap((summary) =>
-      summary.rows.map((row) => ({
-        id: createId("odds"),
-        matchId: row.matchId,
-        bookmaker: row.bookmaker,
-        market: row.market,
-        selection: row.selection,
-        line: row.line,
-        decimalOdds: row.decimalOdds,
-        capturedAt: row.capturedAt,
-        createdBy: "codex" as const,
-        sourceActor: "codex",
-        sourceType: "saba_api",
-        sourceNote: row.sourceNote,
-      })),
-    );
-    if (values.length > 0) {
-      getDb().insert(oddsSnapshots).values(values).run();
-      inserted = values.length;
-    }
+    inserted = writeSabaOddsRows(summaries.flatMap((summary) => summary.rows));
   }
 
   return {

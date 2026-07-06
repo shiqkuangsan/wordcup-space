@@ -55,7 +55,19 @@ execution hygiene, settlement review, or screenshots, use:
 .agents/skills/codex-betting-operator/SKILL.md
 ```
 
-For SABA/BW odds capture, use:
+For matchday SABA/BW odds capture, use the orchestration command first:
+
+```bash
+pnpm sync:match-odds -- --date <YYYY-MM-DD> --scope common
+pnpm sync:match-odds -- --date <YYYY-MM-DD> --scope common --write
+```
+
+This command runs the read-only SABA API and checks whether each match has broad
+market coverage. If SABA only returns one market, treat the capture as
+incomplete and use page-text fallback or another comparable odds source before
+using the data for betting analysis.
+
+For low-level SABA diagnostics, use:
 
 ```bash
 pnpm capture:saba-odds -- --date <YYYY-MM-DD> --scope common
@@ -72,9 +84,23 @@ pnpm capture:saba-odds -- --date <YYYY-MM-DD> --scope all --request-delay-ms 750
 For text fallback from a copied bookmaker page:
 
 ```bash
+pnpm capture:chrome-odds-text -- --match-id <id-or-match-number>
 pnpm capture:bw-odds -- --match-id <id-or-match-number> --stdin --dry-run
 pnpm capture:bw-odds -- --match-id <id-or-match-number> --stdin --write
 ```
+
+When the logged-in BW/SABA page is already open in Chrome, use the Chrome
+connector first. If `openTabs()` returns an empty list, do not immediately fall
+back to AppleScript, screenshots, or unrelated browser tooling. First inspect
+all available Chrome extension backends, select the one whose `openTabs()`
+contains the Betway/SABA URL, and claim that exact tab. Only use OS-level
+fallbacks after plainly reporting that no Chrome connector can see the target
+tab and the user approves the fallback.
+
+Use `capture:chrome-odds-text` first when the user has the logged-in BW/SABA
+match detail page open in Chrome. It only copies page text into
+`tmp/bw-odds/<date>/<matchNumber>.txt`; it does not click bookmaker controls.
+Then rerun `sync:match-odds` with `--fallback-text-dir`.
 
 For already-placed bet screenshots or manual confirmations:
 
@@ -164,4 +190,3 @@ Users can ask Codex:
 ```text
 使用 wordcup-space，这几场出结果了，帮我结算和复盘。
 ```
-

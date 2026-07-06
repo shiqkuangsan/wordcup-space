@@ -69,7 +69,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 不要因为赔率看起来漂亮就升级高波动玩法。正确比分、和局、胜且双方进球、窄区间总进球默认小额或观察，除非证据非常充分。
 - Betway 可能显示欧盘、港盘、马来盘；记录前必须确认格式，不能把马来盘当港盘。
 - Betway 的 `赔率增值`、`赛事串关`、boosted card 不等同普通盘口；不能把它们的组合价格当作正常单关价格。
-- BW / 沙盟体育赛前盘口优先走只读 SABA API：`pnpm capture:saba-odds -- --date <本地日期> --scope common` dry-run 后再 `--write`。不要让用户逐场截图作为日常方案。
+- BW / 沙盟体育赛前盘口优先走多源编排命令：`pnpm sync:match-odds -- --date <本地日期> --scope common` dry-run 后再 `--write`。该命令先跑只读 SABA API，并检查每场盘口覆盖度；若 SABA visitor API 只返回主盘口或 `MarketCount=1`，不能把结果当完整盘口，必须用登录态页面文本/其它可比来源补齐后再用于下注分析。
+- `pnpm capture:saba-odds` 仍可作为底层诊断命令；`pnpm capture:chrome-odds-text` 是登录态 Chrome 比赛详情页文本落盘兜底，`pnpm capture:bw-odds` 是已复制文本解析兜底。不要让用户逐场截图作为日常方案。
+- `pnpm capture:chrome-odds-text -- --match-id <id>` 只允许复制当前 Chrome 页面文本到 `tmp/bw-odds/<date>/<matchNumber>.txt`，不得点击下注控件；复制结果必须通过目标球队和盘口分类校验，随后仍需 `sync:match-odds --fallback-text-dir` dry-run 确认后再 `--write`。
 - SABA token 只在内存中使用；不得打印、提交、写入文档或数据库。SABA `Price` 入库前必须折算为系统 `decimalOdds`，并在 `sourceNote` 保留 raw price、`betTypeId`、`marketId`、`selId` 和推断格式。
 - `--scope common` 用于日常下注决策；`--scope all` 用于原始归档，未知盘口会以 `saba:<betTypeId>` 入库，不能直接当成已理解的下注市场。
 
@@ -81,6 +83,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 真实下注最终提交必须由用户确认或用户点击；Codex 不得点击最后提交按钮。
 - 准备好的 Betway 票夹不是成交记录。提交失败、用户没点、选项关闭或赔率超出容忍区间时，不得写入成交注单。
 - 成交记录必须保留 `decision_by=codex`、`placed_by=user`、`portfolio_id=codex`、`platform_account=betway-main`、`is_real_money=true`，除非用户明确另行说明。
+- 滚球锁利窗口必须先给可执行结论：买什么、各买多少、总投入、最低锁定收益和原票继续命中收益。公式、长分析和情绪安抚放后面；窗口消失后要改称救火/追救，不能继续按锁利预算重仓。
 
 ## 长会话沉淀要求
 

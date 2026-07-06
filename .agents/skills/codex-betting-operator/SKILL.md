@@ -111,6 +111,11 @@ package:
   profit rather than total return. For local recording, split into component
   slips using a shared confirmation prefix, for example `<order>-C01`, so partial
   settlement and bankroll math remain correct.
+- When a system parlay component contains a void/push leg, settle the component
+  at adjusted odds with that leg removed; do not mark the component as a full
+  win at the original total odds. Example: a `-1` handicap that wins by exactly
+  one goal is a push, so a 2-leg component becomes a single-leg return and a
+  3-leg component becomes the product of the two remaining winning legs.
 
 For each parlay execution package, include at least one correct-score parlay
 candidate unless the market is unavailable or prices cannot be verified. A
@@ -161,25 +166,73 @@ documented in `docs/bw-odds-capture.md`.
 Primary route:
 
 ```bash
-pnpm capture:saba-odds -- --date <local-date> --scope common
-pnpm capture:saba-odds -- --date <local-date> --scope common --write
+pnpm sync:match-odds -- --date <local-date> --scope common
+pnpm sync:match-odds -- --date <local-date> --scope common --write
 ```
 
-Use `--scope common` for daily decisions. Use `--scope all` only when raw
+Use `--scope common` for daily decisions. This orchestration command runs the
+SABA visitor API and marks a match incomplete when the API only returns a thin
+market set, such as a single full-time handicap. Do not treat a thin SABA result
+as all available odds when the logged-in Betway/SABA page visibly has more
+markets. Use page-text fallback or another comparable source before making
+betting decisions from that match.
+
+Use `--scope all` only when raw
 archival coverage is more important than UI cleanliness, because unknown SABA
 markets are stored as `saba:<betTypeId>`.
+
+Low-level SABA diagnostic route:
+
+```bash
+pnpm capture:saba-odds -- --date <local-date> --scope common
+```
 
 Fallback route:
 
 ```bash
+pnpm capture:chrome-odds-text -- --match-id <id>
 pnpm capture:bw-odds -- --match-id <id> --text-file <file> --dry-run
 pbpaste | pnpm capture:bw-odds -- --match-id <id> --stdin --dry-run
 ```
 
-Both commands are read-only with respect to the bookmaker page and only write
+When using Chrome for BW/SABA odds reading, there may be more than one Chrome
+extension backend. Do not assume `agent.browsers.get("extension")` selected the
+right browser instance. If `browser.user.openTabs()` does not show the visible
+Betway tab, inspect all extension backends, choose the backend whose
+`openTabs()` contains the target `baluquqy7k.com/cn/sports` tab, and claim that
+tab. A wrong backend returning `openTabs=[]` is not evidence that Chrome is
+unavailable.
+
+`capture:chrome-odds-text` is the preferred logged-in-page fallback when the
+user has opened the target BW/SABA match detail page in Chrome. It copies
+visible page text to `tmp/bw-odds/<date>/<matchNumber>.txt`, validates target
+teams and market hints, and never clicks betting controls. After capture, rerun
+`sync:match-odds` with `--fallback-text-dir`.
+
+These commands are read-only with respect to the bookmaker page and only write
 local `odds_snapshots` after the dry-run output looks structurally correct.
 SABA visitor/odds tokens are runtime secrets: never print them, commit them, put
 them in docs, or store them in database notes.
+
+Odds capture is not complete until the local database proves coverage. After a
+BW/SABA page-text capture, run the parser dry-run and check `parsedCount`,
+distinct markets, and representative selections before `--write`. For a match
+detail page, a result of `parsedCount=0`, one thin market, or only main-list
+markets is a failed capture even if raw text exists. The expected detail capture
+should include at least the common core markets when available: full-time and
+half-time handicap, totals, 1X2, correct score, half-time correct score, second
+half correct score, half/full-time, total goals, odd/even, BTTS-style markets,
+double chance, clean sheet, and winning margin. Do not use incomplete odds for
+betting analysis unless the missing markets are explicitly acknowledged and the
+decision does not depend on them.
+
+If BW/Betway navigation fails because of proxy, site errors, blank iframe
+content, or console/network failures, stop the bookmaker capture loop. Do not
+keep retrying AppleScript, screenshots, or page-copy commands against a broken
+page, and do not write partial rows as if they were complete odds. Use one of
+two explicit modes instead: `defer odds sync` when full Betway coverage is
+required, or `fallback analysis` using public comparable odds sources with the
+coverage limitation stated in the user-facing output and source notes.
 
 Required handoff checks:
 
@@ -305,6 +358,12 @@ sample of settled bets by market type:
   roughly 1.70 need a clear edge, clean settlement shape, and enough portfolio
   value to justify real-money risk. Do not use several low-odds legs to make a
   plan look active.
+- Favorite handicaps need a margin path, not just a winner read. Before using
+  `-1`, `-2`, or `-2.5` as a core leg, state why the favorite should keep
+  pressing after taking the lead: qualification margin, goal-difference
+  incentive, opponent collapse risk, matchup overload, bench quality, or live
+  pressure. If the evidence only says "stronger team should win", prefer
+  moneyline/team total/half-time expression, reduce stake, or pass.
 - Do not upgrade a high-odds market because it is emotionally attractive. Draws,
   correct scores, win-and-BTTS, and narrow total-goals ranges should be
   down-weighted unless team news, matchup shape, and market comparison all
@@ -318,6 +377,17 @@ sample of settled bets by market type:
   when the user explicitly asks for them. They should normally use the published
   Codex score predictions, stay small relative to the parlay cap, and be tracked
   separately from core ROI judgment.
+- When an exact-score read is close but misses by one goal, convert the lesson
+  into market-shape learning instead of only calling it "wrong". For example, a
+  `2-0` prediction becoming `3-0` and a `2-1` prediction becoming `2-0` both
+  say the stronger team/control-and-clean-sheet thesis was better than the
+  precise score. Future betting should prefer cleaner expressions such as
+  favorite handicap, opponent team total under, clean sheet, or BTTS No when the
+  market and team news support that cluster.
+- Do not let many correct-score or exact-margin tickets crowd out the main
+  portfolio thesis. Exact scores are useful as small upside samples and
+  calibration data, but direction accuracy, market expression, and settlement
+  shape must be reviewed separately from correct-score ROI.
 - Prefer market-shape edges when winner edges are weak. Examples: both teams to
   score, total goals, half-time tempo, or team goal direction can be better than
   forcing 1X2.
@@ -327,12 +397,39 @@ sample of settled bets by market type:
   and final opponent. This can invalidate otherwise plausible totals or
   handicaps: a team needing margin may be a better handicap/over candidate,
   while two teams already well placed may protect a draw and weaken over bets.
+- In the final group-round, convert motivation into a concrete target function
+  before choosing a market:
+  - `must win`: expect late risk, weaker clean-sheet assumptions, and possible
+    over/live volatility;
+  - `draw acceptable for both`: downgrade winner and over theses, consider draw
+    or under only if the price is clean;
+  - `first-place or goal-difference chase`: favorite handicaps/totals can be
+    upgraded only when the team has reason to keep pressing after the first
+    lead;
+  - `already locked`: assume rotation/minute management until lineup proves
+    otherwise; avoid deep handicaps and exact-score confidence;
+  - `eliminated spoiler`: do not assume no effort, but require scoring evidence
+    before using BTTS or overs.
+- Final-round bets must state the knockout-path implication in the evidence
+  summary. If the bet would only be attractive under a generic strength read but
+  not under the team's actual table incentives, mark it `pass` or reduce it to a
+  small parlay/watch leg.
 - Treat half-time markets as first-class expressions, not side curiosities.
   When the evidence is about a cautious start, early tactical control, or a
   favorite asserting superiority before game state opens up, half-time totals or
   half-time handicaps can be cleaner than full-time markets. Do not generalize a
   half-time thesis into a full-time bet unless the late-match scoring and
   substitution risk are also part of the edge.
+- In knockout matches, downgrade fragile draw and under theses when the match
+  can be reshaped by late desperation, stoppage-time pressure, extra VAR checks,
+  or technology-assisted decisions. A slow first 70 minutes is not enough to
+  protect a narrow `1-1`/under path. Prefer totals with push/half-loss buffer,
+  smaller stake, or a pass unless the favorite also lacks late attacking depth.
+- For strong favorites with repeated clean sheets, high shot volume, or a clear
+  full-back/pressing overload, do not underweight the margin path merely because
+  the opponent is tactically competent. If the favorite has reason and ability
+  to keep attacking after 1-0, `-1.5`, team total over, or BTTS No may be a
+  cleaner expression than low-odds moneyline or exact 2-1.
 - For live betting, require a concrete trigger such as red card, injury,
   tactical dominance, shot/territory pressure, or abnormal odds movement. A live
   scoreline merely matching Codex's prediction is not enough.
@@ -349,6 +446,23 @@ sample of settled bets by market type:
   market's profit-only odds when Betway shows Hong Kong odds. A good defensive
   hedge can be slightly above the adverse-branch break-even stake when it locks
   in a small positive result while preserving most of the original upside.
+- Live profit-locking windows are time-critical. When the user has a high-upside
+  ticket that is still live and asks how to hedge, output the executable
+  conclusion first: `buy X / stake A, buy Y / stake B, total stake C, minimum
+  locked profit range, original-ticket upside if protected score hits`. Put
+  formulas and discussion after the action list. Do not spend the first response
+  on background explanation, broad analysis, or emotional reassurance.
+- Treat missed live hedges as process failures, not only bad luck. If a hedge
+  window closes before execution because Codex delayed the conclusion, record
+  the lesson and make the next live hedge response more direct. After the
+  protected ticket is dead, stop calling the next bet a hedge; reclassify it as
+  a rescue/chase bet, downsize sharply, and state that the original profit-lock
+  opportunity is gone.
+- When several hedge outcomes can cover the same adverse branch, prefer the
+  smallest set of markets that covers all feasible final-score paths. For
+  example, at `1-2` with an original `2-2` correct-score ticket, exact scores
+  `1-2` and `1-3` plus over `4.5` can cover no-more-goal, one-away-goal, and
+  any fifth-goal branch while preserving the original `2-2` upside.
 - When User and Codex tickets share one platform account but separate ledgers,
   state which scope is being hedged. A hedge may be excessive for User-only
   exposure but correct for the combined practical exposure across User and Codex

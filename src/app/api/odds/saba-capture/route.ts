@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiError, apiOk } from "@/server/api/responses";
 import { captureSabaOdds } from "@/server/providers/saba-odds-api";
+import { assessOddsCaptureCompleteness } from "@/server/providers/odds-capture-completeness";
 
 const requestSchema = z.object({
   localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
         matchNumber: match.matchNumber,
         title: `${match.homeTeam} vs ${match.awayTeam}`,
         kickoffAt: match.kickoffAt,
+        sabaMarketCount: match.sabaMarketCount ?? null,
         sabaTitle:
           match.sabaHomeTeam && match.sabaAwayTeam
             ? `${match.sabaHomeTeam} vs ${match.sabaAwayTeam}`
@@ -34,6 +36,7 @@ export async function POST(request: NextRequest) {
         homeAwayMismatch: Boolean(match.homeAwayMismatch),
         skippedReason: match.skippedReason ?? null,
         parsedCount: match.rows.length,
+        completeness: assessOddsCaptureCompleteness(match.rows),
         markets: Array.from(new Set(match.rows.map((row) => row.market))).sort(),
       })),
     });

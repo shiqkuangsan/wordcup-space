@@ -28,6 +28,12 @@ Prediction is separate from betting:
   evidence.
 - If the predicted score suggests a market but the evidence gate is weak, record
   the score prediction and mark betting as `观察` or `否`.
+- When nearby scorelines share the same football thesis, record that cluster in
+  the rationale instead of pretending one exact score carries all confidence.
+  Examples: `2-0 / 3-0` can both mean favorite dominance plus clean sheet;
+  `1-1 / 2-1` can mean competitive match with late volatility. Exact score is
+  still the published prediction, but the rationale should preserve the broader
+  scoring path so later betting can choose safer market expressions.
 
 ## Required Workflow
 
@@ -46,6 +52,9 @@ Prediction is separate from betting:
    - host-country or quasi-home advantage for USA, Canada, and Mexico in the
      2026 World Cup;
    - tactical matchup and likely scoring environment;
+   - for final group-round matches, the knockout seeding target: whether each
+     team is chasing first place, protecting second/third, already locked into a
+     slot, or likely managing minutes because advancement/position is decided.
    - opposing evidence.
 5. Build a structured probability baseline before choosing a scoreline:
    - Prefer the local TypeScript model in `src/domain/prediction-model.ts` when
@@ -91,8 +100,28 @@ Prediction is separate from betting:
   top two plus the best eight third-placed teams to the round of 32, so points,
   goal difference, goals scored, and final-round opponent can change whether a
   team protects a draw, chases margin, or takes late risk.
+- For the final group-round, treat the match as a knockout-path problem before
+  treating it as a form problem. State each team's target function first:
+  `must win`, `draw acceptable`, `must win by margin`, `first-place chase`,
+  `rotation/protect`, or `eliminated spoiler`. Use that target to shape the
+  scoreline. Examples:
+  - two qualified teams that both benefit from a draw should lower tempo and
+    draw-score confidence;
+  - a favorite that only needs a draw may win without covering a deep handicap;
+  - a team needing goal difference may keep pressing after 1-0 or 2-0;
+  - an eliminated opponent can still affect totals if it is structurally weak
+    or has no scoring evidence.
+- Do not publish a final-round score prediction from generic team strength
+  alone. If the target function is unclear or conflicts with the market, mark
+  the prediction lower confidence or defer until lineup/market movement is
+  available.
 - Use `defer` for matches that need closer kickoff information, especially lineups, injury confirmation, late odds movement, weather, venue impact, or first-round form.
 - Use `abstain` when the match has no meaningful Codex edge even after checking available information.
+- In knockout matches, explicitly state late-game volatility when it matters:
+  extra-time incentives, stoppage-time pressure, VAR/technology review risk,
+  and whether the trailing team has enough bench/attacking depth to break an
+  under or draw path. Do not make a narrow draw/under-friendly scoreline look
+  safer than it is when both teams can change the game late.
 
 ## Rerun Discipline
 

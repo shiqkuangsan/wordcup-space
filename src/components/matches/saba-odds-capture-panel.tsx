@@ -23,10 +23,18 @@ type CaptureMatchSummary = {
   matchNumber: number | null;
   title: string;
   kickoffAt: string;
+  sabaMarketCount: number | null;
   sabaTitle: string | null;
   homeAwayMismatch: boolean;
   skippedReason: string | null;
   parsedCount: number;
+  completeness: {
+    status: "complete" | "thin" | "empty";
+    reason: string;
+    marketCount: number;
+    rowCount: number;
+    markets: string[];
+  };
   markets: string[];
 };
 
@@ -52,6 +60,12 @@ function tomorrowDateValue() {
 
 function defaultDelayForScope(scope: Scope) {
   return scope === "all" ? "750" : "250";
+}
+
+function completenessLabel(status: CaptureMatchSummary["completeness"]["status"]) {
+  if (status === "complete") return "覆盖正常";
+  if (status === "thin") return "盘口不完整";
+  return "未抓到";
 }
 
 export function SabaOddsCapturePanel() {
@@ -177,13 +191,21 @@ export function SabaOddsCapturePanel() {
                     <Badge variant={match.skippedReason ? "destructive" : "secondary"}>
                       {match.skippedReason ? "跳过" : `${match.parsedCount} 条`}
                     </Badge>
+                    <Badge variant={match.completeness.status === "complete" ? "secondary" : "destructive"}>
+                      {completenessLabel(match.completeness.status)}
+                    </Badge>
                     {match.homeAwayMismatch ? <Badge variant="outline">主客序不同</Badge> : null}
                   </div>
                   {match.sabaTitle && match.sabaTitle !== match.title ? (
                     <div className="text-xs text-muted-foreground">沙巴：{match.sabaTitle}</div>
                   ) : null}
+                  {match.sabaMarketCount !== null ? (
+                    <div className="text-xs text-muted-foreground">SABA MarketCount：{match.sabaMarketCount}</div>
+                  ) : null}
                   {match.skippedReason ? (
                     <div className="text-xs text-destructive">{match.skippedReason}</div>
+                  ) : match.completeness.status !== "complete" ? (
+                    <div className="text-xs text-destructive">{match.completeness.reason}</div>
                   ) : (
                     <div className="line-clamp-2 text-xs text-muted-foreground">
                       {match.markets.length} 类盘口：{match.markets.join("、")}

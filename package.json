@@ -18,6 +18,8 @@
     "sync:worldcup2026": "tsx src/scripts/sync-worldcup-2026.ts",
     "sync:worldcup2026:api": "tsx src/scripts/sync-worldcup-2026-api.ts",
     "sync:odds": "tsx src/scripts/sync-odds.ts",
+    "sync:match-odds": "tsx src/scripts/sync-match-odds.ts",
+    "capture:chrome-odds-text": "tsx src/scripts/capture-chrome-odds-text.ts",
     "capture:bw-odds": "tsx src/scripts/capture-bw-odds.ts",
     "capture:saba-odds": "tsx src/scripts/capture-saba-odds.ts",
     "verify:skills": "tsx src/scripts/verify-codex-skills.ts",
@@ -63,13 +65,5 @@
     "tsx": "^4.22.4",
     "typescript": "^5",
     "vitest": "^4.1.8"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild",
-      "sharp",
-      "unrs-resolver"
-    ]
   }
 }

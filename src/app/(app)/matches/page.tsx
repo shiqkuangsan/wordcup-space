@@ -54,6 +54,24 @@ function TeamName({ name }: { name: string }) {
   );
 }
 
+function MatchResultBadge({ match }: { match: Match }) {
+  const hasFinalScore =
+    match.latestResultStatus === "finished" &&
+    match.latestResultHomeScore !== null &&
+    match.latestResultAwayScore !== null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 md:justify-end">
+      {hasFinalScore ? (
+        <Badge variant="secondary" className="font-mono text-sm tabular-nums">
+          {match.latestResultHomeScore}-{match.latestResultAwayScore}
+        </Badge>
+      ) : null}
+      <Badge variant="outline">{formatMatchStatus(match.status)}</Badge>
+    </div>
+  );
+}
+
 function getLatestOddsGroups(odds: OddsSnapshot[]) {
   const latestByBookmaker = new Map<string, OddsSnapshot[]>();
 
@@ -137,7 +155,7 @@ function MatchDateGroup({
               ) : null}
             </div>
             <div className="flex items-center md:justify-end">
-              <Badge variant="outline">{formatMatchStatus(match.status)}</Badge>
+              <MatchResultBadge match={match} />
             </div>
           </Link>
         ))}

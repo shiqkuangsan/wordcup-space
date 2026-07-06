@@ -19,7 +19,7 @@
 | 1 | 你提供的 Betway 盘口截图或文本 | 你实际看到的盘口，优先级最高 | 记录时间、博彩公司、市场、盘口线、赔率和截图/来源说明。 |
 | 2 | ESPN odds API / DraftKings | DraftKings 全场胜平负参考赔率 | 当前 `pnpm sync:odds` 默认使用 ESPN 的公开 odds API 拉取 DraftKings。 |
 | 3 | bet365 News / 可配置公开源 | bet365 全场胜平负参考赔率 | 公开 News 页只覆盖部分比赛；可用 `ODDS_SOURCE_FIXTURES_JSON` 增补来源。 |
-| 4 | BW / 沙盟体育 / SABA API 采集 | 用户真实可下单平台的赛前盘口快照 | 优先使用 `pnpm capture:saba-odds -- --date <本地日期> --scope common` 通过 SABA visitor API 只读采集；`pnpm capture:bw-odds` 保留为页面文本兜底。 |
+| 4 | BW / 沙盟体育 / SABA / 页面文本采集 | 用户真实可下单平台的赛前盘口快照 | 优先使用 `pnpm sync:match-odds -- --date <本地日期> --scope common` 编排 SABA API 和页面文本兜底；`pnpm capture:saba-odds` 仅作为底层诊断，`pnpm capture:bw-odds` 保留为单场文本兜底。 |
 | 5 | The Odds API / 其他商业 odds API | 多家博彩公司赔率标准化和横向比较 | 使用本地环境变量保存 key，不提交 secrets。 |
 | 6 | 手工研究 | 补充上下文和交叉校验 | 来源写入 `source_note`。 |
 
@@ -36,16 +36,25 @@ pnpm sync:odds
 BW / SABA 赛前盘口采集：
 
 ```bash
-pnpm capture:saba-odds -- --date 2026-06-15 --scope common
-pnpm capture:saba-odds -- --date 2026-06-15 --scope common --write
+pnpm sync:match-odds -- --date 2026-06-15 --scope common
+pnpm sync:match-odds -- --date 2026-06-15 --scope common --write
 ```
 
-`common` 只写入稳定识别的常用盘口；`all` 会把未知盘口用 `saba:<betTypeId>` 归档。接口 token 只在内存中使用，不能打印、不能写入 docs 或数据库。
+`common` 只写入稳定识别的常用盘口；`all` 会把未知盘口用 `saba:<betTypeId>` 归档。编排命令会标记每场盘口覆盖是否完整；如果 SABA visitor API 只返回单一盘口，不得把结果用于完整盘口分析，必须补页面文本或其它可比来源。接口 token 只在内存中使用，不能打印、不能写入 docs 或数据库。
+
+登录态页面文本兜底：
+
+```bash
+pnpm capture:chrome-odds-text -- --match-id 10
+pnpm sync:match-odds -- --date 2026-06-15 --scope common --fallback-text-dir tmp/bw-odds/2026-06-15
+```
+
+该命令只复制 Chrome 当前比赛详情页文本到 `tmp/bw-odds/`，不点击下注控件；写库仍由 `sync:match-odds --fallback-text-dir ... --write` 负责。
 
 如果跑 `--scope all`，建议加节流：
 
 ```bash
-pnpm capture:saba-odds -- --date 2026-06-15 --scope all --request-delay-ms 750
+pnpm sync:match-odds -- --date 2026-06-15 --scope all --request-delay-ms 750
 ```
 
 ## Codex / Agent 工具

@@ -115,8 +115,8 @@ pnpm setup:agents
 推荐先用 SABA/BW API 采集常用盘口：
 
 ```bash
-pnpm capture:saba-odds -- --date 2026-06-15 --scope common
-pnpm capture:saba-odds -- --date 2026-06-15 --scope common --write
+pnpm sync:match-odds -- --date 2026-06-15 --scope common
+pnpm sync:match-odds -- --date 2026-06-15 --scope common --write
 ```
 
 说明：
@@ -129,11 +129,13 @@ pnpm capture:saba-odds -- --date 2026-06-15 --scope common --write
 文本兜底：
 
 ```bash
+pnpm capture:chrome-odds-text -- --match-id 10
+pnpm sync:match-odds -- --date 2026-06-15 --scope common --fallback-text-dir tmp/bw-odds/2026-06-15
 pbpaste | pnpm capture:bw-odds -- --match-id 10 --stdin --dry-run
 pbpaste | pnpm capture:bw-odds -- --match-id 10 --stdin --write
 ```
 
-盘口采集只读 bookmaker 页面，不创建下注决策，也不创建注单。
+`capture:chrome-odds-text` 只复制当前 Chrome 登录态页面文本，不点击下注按钮；复制失败或校验不通过时，不会写 fallback 文件。盘口采集只读 bookmaker 页面，不创建下注决策，也不创建注单。
 
 ## 预测流程
 
