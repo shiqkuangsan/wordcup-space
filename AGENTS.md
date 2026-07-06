@@ -84,6 +84,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 准备好的 Betway 票夹不是成交记录。提交失败、用户没点、选项关闭或赔率超出容忍区间时，不得写入成交注单。
 - 成交记录必须保留 `decision_by=codex`、`placed_by=user`、`portfolio_id=codex`、`platform_account=betway-main`、`is_real_money=true`，除非用户明确另行说明。
 - 滚球锁利窗口必须先给可执行结论：买什么、各买多少、总投入、最低锁定收益和原票继续命中收益。公式、长分析和情绪安抚放后面；窗口消失后要改称救火/追救，不能继续按锁利预算重仓。
+- 用户赛后只给平台最终余额、且中途存在未逐单记录的滚球/追救投注时，只能用明确备注的 `adjustment` 对齐账本；不得为了补明细而伪造 `bet_slip`。
 
 ## 长会话沉淀要求
 

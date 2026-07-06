@@ -452,6 +452,13 @@ sample of settled bets by market type:
   locked profit range, original-ticket upside if protected score hits`. Put
   formulas and discussion after the action list. Do not spend the first response
   on background explanation, broad analysis, or emotional reassurance.
+- If the user asks for "stable profit", "lock profit", "对冲", "锁利", or
+  similar language during a live match, treat it as an emergency execution
+  request. Use the visible score, visible odds, original ticket stake/return,
+  and platform balance already provided in the conversation; state assumptions
+  inline, but do not wait for perfect bookkeeping before giving a stake table.
+  If no complete lock is possible, say that immediately and present only the
+  least-bad defensive option.
 - Treat missed live hedges as process failures, not only bad luck. If a hedge
   window closes before execution because Codex delayed the conclusion, record
   the lesson and make the next live hedge response more direct. After the
@@ -477,6 +484,11 @@ After each cancelled intent, failed execution, losing bet, or bad process:
 - Also preserve positive lessons. If a live hedge, stake split, market choice, or
   execution pattern proves useful and repeatable, add it to the skill or
   operating playbook instead of only mentioning it in chat.
+- When the user later reports a final platform balance after many unrecorded
+  live bets, do not invent synthetic bet slips. Record match results, settle any
+  real open slips that exist, then use a clearly labelled portfolio
+  `adjustment` to align the ledger to the platform balance. The note must say
+  that the adjustment covers unrecorded live/rescue bets and is not a fake slip.
 - Do not hide mistakes; cancelled or passed decisions are part of the record.
 - Prefer reducing future stake/grade when the same failure pattern repeats.
 - For each settled losing bet, classify the failure as at least one of:
