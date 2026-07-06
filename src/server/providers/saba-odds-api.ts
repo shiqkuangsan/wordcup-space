@@ -239,8 +239,14 @@ function scoreSelection(value: string) {
   return value.replace(":", "-");
 }
 
-function twoDigitScoreSelection(value: string) {
-  return /^\d\d$/.test(value) ? `${value[0]}-${value[1]}` : value;
+function halfFullSelection(value: string, homeTeam: string, awayTeam: string) {
+  const outcome = (digit: string) => {
+    if (digit === "1") return homeTeam;
+    if (digit === "2") return awayTeam;
+    return "和局";
+  };
+
+  return /^\d\d$/.test(value) ? `${outcome(value[0])}/${outcome(value[1])}` : value;
 }
 
 function selectionLabel(input: {
@@ -261,7 +267,7 @@ function selectionLabel(input: {
     case 15:
       return selId === "1" ? homeTeam : selId === "2" ? awayTeam : "和局";
     case 16:
-      return twoDigitScoreSelection(selId);
+      return halfFullSelection(selId, homeTeam, awayTeam);
     case 405:
     case 413:
       return scoreSelection(selId);
@@ -290,6 +296,7 @@ function marketKey(betTypeId: number, scope: SabaCaptureScope) {
     case 15:
       return "half_time:moneyline";
     case 16:
+      return "full_time:half_full";
     case 405:
       return "half_time:correct_score";
     case 413:

@@ -12,6 +12,7 @@ export type MarketType =
   | "highest_scoring_half"
   | "both_teams_to_score"
   | "win_and_btts"
+  | "half_full"
   | "parlay";
 
 export const BET_PERIOD_OPTIONS: Array<{ value: BetPeriod; label: string }> = [
@@ -32,6 +33,7 @@ export const MARKET_TYPE_OPTIONS: Array<{ value: MarketType; label: string; need
   { value: "highest_scoring_half", label: "进球最多的半场", needsLine: false },
   { value: "both_teams_to_score", label: "双方进球", needsLine: false },
   { value: "win_and_btts", label: "胜负 + 双方进球", needsLine: false },
+  { value: "half_full", label: "半场/全场", needsLine: false },
   { value: "parlay", label: "串关", needsLine: false },
 ];
 

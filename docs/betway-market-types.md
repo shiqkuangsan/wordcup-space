@@ -25,7 +25,7 @@
 | `双重机会` | `full_time:double_chance` | 全场 | 主/和、主/客、和/客 | 空 | 降低胜平负风险，但赔率通常更低。 |
 | `总进球` | `full_time:total_goals_range` | 全场 | 0-1、2-3、4-6、7+ 或具体总数 | 空或区间 | 和“大/小”不同，属于区间/精确总进球。 |
 | `单 / 双` | `full_time:odd_even` | 全场 | 单、双 | 空 | 总进球奇偶，默认不作为 Codex 主线盘口。 |
-| `半场 / 全场` | `half_time_full_time` | 全场组合 | 主/主、和/主、客/和等 | 空 | 高方差组合盘。 |
+| `半场 / 全场` | `full_time:half_full` | 全场组合 | 主/主、和/主、客/和等 | 空 | 高方差组合盘。 |
 | `串关` | `parlay` | 组合 | 多个 leg | 每条 leg 自带 line | 父级 slip 存总赔率，legs 存各自赔率。 |
 
 ## 半场盘口
@@ -74,7 +74,7 @@
 | 4 | `full_time:moneyline` | 只在赔率仍有价值、风险可接受时买。 |
 | 5 | `parlay` | 每个 leg 必须独立通过证据门槛，不要求也买单场。 |
 
-以下盘口默认降权：`correct_score`、`half_time_full_time`、`odd_even`、`total_goals_range`、`special:*`。除非价格、阵容、战术和市场对照同时支持，否则只观察不下单。
+以下盘口默认降权：`correct_score`、`full_time:half_full`、`odd_even`、`total_goals_range`、`special:*`。除非价格、阵容、战术和市场对照同时支持，否则只观察不下单。
 
 ## 2026-06-13 Betway 页面复核样本
 

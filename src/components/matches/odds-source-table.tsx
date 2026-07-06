@@ -21,6 +21,7 @@ const marketRank: Record<string, number> = {
   "full_time:double_chance": 3,
   "full_time:correct_score": 4,
   "full_time:total_goals_range": 5,
+  "full_time:half_full": 6,
   "half_time:moneyline": 10,
   "half_time:handicap": 11,
   "half_time:total": 12,

@@ -184,6 +184,12 @@ suffix after ` - `, and the higher `MarketCount`. If a matched event has
 `MarketCount=1` or the page title is a special market, treat it as the wrong
 event and search the SABA pool again before writing odds.
 
+For SABA football common markets, `BetTypeId=16` is half-time/full-time
+combination (`full_time:half_full`), not half-time correct score. The actual
+half-time correct score feed uses `BetTypeId=405`. If half/full-time is required
+by the user, verify that the latest database snapshot contains
+`full_time:half_full` before saying the common odds sync is complete.
+
 Use `--scope all` only when raw
 archival coverage is more important than UI cleanliness, because unknown SABA
 markets are stored as `saba:<betTypeId>`.
