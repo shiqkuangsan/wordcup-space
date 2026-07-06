@@ -361,9 +361,25 @@ function findSabaMainMatches(showAll: SabaShowAllOddsData) {
     if (!match.IsMainMarket) continue;
     const homeTeam = decodeSabaName(showAll.TeamN[String(match.TeamId1)]);
     const awayTeam = decodeSabaName(showAll.TeamN[String(match.TeamId2)]);
-    result.set(normalizePair(homeTeam, awayTeam), match);
+    const key = normalizePair(homeTeam, awayTeam);
+    const existing = result.get(key);
+    if (!existing || isBetterMainMatch(showAll, match, existing)) result.set(key, match);
   }
   return result;
+}
+
+function isBetterMainMatch(showAll: SabaShowAllOddsData, candidate: SabaMatch, current: SabaMatch) {
+  const candidateLeague = decodeSabaName(showAll.LeagueN[String(candidate.LeagueId)]);
+  const currentLeague = decodeSabaName(showAll.LeagueN[String(current.LeagueId)]);
+  const candidateIsBaseLeague = !candidateLeague.includes(" - ");
+  const currentIsBaseLeague = !currentLeague.includes(" - ");
+  if (candidateIsBaseLeague !== currentIsBaseLeague) return candidateIsBaseLeague;
+
+  const candidateIsRoot = !candidate.Parentmatchid || candidate.Parentmatchid === 0;
+  const currentIsRoot = !current.Parentmatchid || current.Parentmatchid === 0;
+  if (candidateIsRoot !== currentIsRoot) return candidateIsRoot;
+
+  return (candidate.MarketCount ?? 0) > (current.MarketCount ?? 0);
 }
 
 function getSabaTeams(showAll: SabaShowAllOddsData, match: SabaMatch) {

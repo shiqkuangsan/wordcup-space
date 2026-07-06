@@ -177,6 +177,13 @@ as all available odds when the logged-in Betway/SABA page visibly has more
 markets. Use page-text fallback or another comparable source before making
 betting decisions from that match.
 
+SABA may expose multiple main-looking events for the same two teams, especially
+in knockout rounds. Examples include the normal match market and a `哪一队可晋级`
+special market. Prefer the base league event with `Parentmatchid=0`, no league
+suffix after ` - `, and the higher `MarketCount`. If a matched event has
+`MarketCount=1` or the page title is a special market, treat it as the wrong
+event and search the SABA pool again before writing odds.
+
 Use `--scope all` only when raw
 archival coverage is more important than UI cleanliness, because unknown SABA
 markets are stored as `saba:<betTypeId>`.
@@ -233,6 +240,12 @@ page, and do not write partial rows as if they were complete odds. Use one of
 two explicit modes instead: `defer odds sync` when full Betway coverage is
 required, or `fallback analysis` using public comparable odds sources with the
 coverage limitation stated in the user-facing output and source notes.
+
+When the BW shell loads but `/cn/sports/` remains on the homepage, page text is
+empty, or direct resource fetches show TLS/socket resets, classify it as a
+network/proxy access problem first. Then use SABA visitor API enumeration if it
+still works, or ask the user to switch proxy/open the target detail page instead
+of debugging the parser.
 
 Required handoff checks:
 

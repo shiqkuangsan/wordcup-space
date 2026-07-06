@@ -70,7 +70,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Betway 可能显示欧盘、港盘、马来盘；记录前必须确认格式，不能把马来盘当港盘。
 - Betway 的 `赔率增值`、`赛事串关`、boosted card 不等同普通盘口；不能把它们的组合价格当作正常单关价格。
 - BW / 沙盟体育赛前盘口优先走多源编排命令：`pnpm sync:match-odds -- --date <本地日期> --scope common` dry-run 后再 `--write`。该命令先跑只读 SABA API，并检查每场盘口覆盖度；若 SABA visitor API 只返回主盘口或 `MarketCount=1`，不能把结果当完整盘口，必须用登录态页面文本/其它可比来源补齐后再用于下注分析。
+- SABA 同一对球队可能同时有普通比赛和 `哪一队可晋级` 等特殊赛事；同步赔率时必须优先基础联赛、`Parentmatchid=0`、`MarketCount` 更高的普通比赛事件，不能让 `MarketCount=1` 的特殊市场覆盖普通比赛。
 - `pnpm capture:saba-odds` 仍可作为底层诊断命令；`pnpm capture:chrome-odds-text` 是登录态 Chrome 比赛详情页文本落盘兜底，`pnpm capture:bw-odds` 是已复制文本解析兜底。不要让用户逐场截图作为日常方案。
+- 当 BW 外壳能打开但 `/cn/sports/` 仍停在首页、页面文本为空、静态资源/TLS 报错时，优先判断为代理或站点访问问题；此时先用 SABA visitor API 枚举或要求用户切换代理/打开详情页，不要把空页面写成完整赔率。
 - `pnpm capture:chrome-odds-text -- --match-id <id>` 只允许复制当前 Chrome 页面文本到 `tmp/bw-odds/<date>/<matchNumber>.txt`，不得点击下注控件；复制结果必须通过目标球队和盘口分类校验，随后仍需 `sync:match-odds --fallback-text-dir` dry-run 确认后再 `--write`。
 - SABA token 只在内存中使用；不得打印、提交、写入文档或数据库。SABA `Price` 入库前必须折算为系统 `decimalOdds`，并在 `sourceNote` 保留 raw price、`betTypeId`、`marketId`、`selId` 和推断格式。
 - `--scope common` 用于日常下注决策；`--scope all` 用于原始归档，未知盘口会以 `saba:<betTypeId>` 入库，不能直接当成已理解的下注市场。
