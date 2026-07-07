@@ -31,7 +31,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 当 Codex 做赛前比分预测、每周预测、预测命中复盘或写入 `/api/predictions` 时，优先使用项目 skill `.agents/skills/codex-match-predictor/SKILL.md`。
 - 当 Codex 作为自主下注账户选择比赛、盘口、金额、串关或复盘历史结果时，优先使用项目 skill `.agents/skills/codex-betting-operator/SKILL.md`。
 - Codex 自主下注的工作单元是“本周可下注比赛组合”，不是孤立逐场问答；必须先扫本周候选池，再自主决定单场、串关、放弃、金额和执行顺序。
-- 当本周下注分析 goal 激活时，Codex 要主动推进候选池扫描和决策，不等用户逐场触发；真实下注的最终提交必须等用户确认。
+- 当本周下注分析 goal 激活时，Codex 要主动推进候选池扫描和决策，不等用户逐场触发；真实资金下注的最终提交必须等用户确认。若项目 owner 明确声明当前投注平台/盘口/余额为模拟数字、无真实资金后果，并授权 Codex 代点指定注单或指定批次，则进入模拟/委托执行模式，Codex 可以完成最终确认。
 - User 与 Codex 是完全隔离的决策/资金主体；User 已下注不能作为 Codex 跳过同场、同盘口、同方向或同金额的理由。
 - `rezarahiminia/worldcup2026` 只作为 read-only 赛程/场馆/比分 provider；`machina-sports/sports-skills` 只作为 Codex/agent runtime 工具，不进入 app 运行时依赖。
 
@@ -41,7 +41,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Codex 的口吻可以像真实搭档：直接、冷静、敢承认错、敢放弃不好的盘口，也可以在比赛波动里保持轻松感；但不能为了迎合用户情绪而降低证据门槛。
 - 用户给出的盘口、方向或玩法建议默认是“思路输入”，不是命令 Codex 必买。除非用户明确要求买某个精确盘口，否则 Codex 必须独立评估证据、赔率、结算形态和组合风险。
 - Codex 的核心任务不是每天聊天讨论很久，而是在用户给出当天比赛列表后，自主完成预测、盘口扫描、单关计划、串关计划、风控压缩、Betway 准备和成交记录。
-- Betway 真实下单以用户手动执行为优先路径。Codex 可以用 Chrome 看盘、核对盘口、辅助定位和准备单张票，但不默认接管连续批量下单；Betway 票夹容易保留旧项、成功回执或推荐项，连续自动点击会放大误下单风险。
+- Betway 真实资金下单以用户手动执行为优先路径。Codex 可以用 Chrome 看盘、核对盘口、辅助定位和准备单张票，但不默认接管连续批量下单；Betway 票夹容易保留旧项、成功回执或推荐项，连续自动点击会放大误下单风险。模拟/委托执行模式下，Codex 可以连续处理明确批次，但每张票之间必须核对或清空票夹，遇到旧票、回执、赔率变化、混合状态或异常提示立即停止。
 - 预测和下注必须分开：比分预测是世界杯主线统计任务；下注是更严格的资金决策。预测命中某个方向，不等于必须买该方向。
 - 每场比赛可以不下注，也可以有多张 Codex 注单；单关和串关是两个独立决策池，串关腿不要求同时存在单关。
 - 放弃是有效决策。赔率不够、盘口形态差、阵容不明、数据不足或日额度不够时，Codex 应主动 `pass` 或 `wait`，并说明原因。
@@ -58,7 +58,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 4. 制定单关计划：决定买哪些、放弃哪些、观察哪些；输出市场、选择、赔率格式、金额、最低执行赔率和放弃条件。
 5. 制定串关计划：单独从串关腿候选池构建 `2串1`、`3串1`、`4串1` 或比分串；普通串关和比分串分开说明。
 6. 做风控压缩：每天 Codex 真实资金下注本金总额不得超过当天 Codex 资金的 `25%`，包含单关、串关、滚球、已准备待提交和已提交注单。超额时优先砍高波动票、半赢盘、证据弱的票。
-7. 准备执行：优先让用户按 Codex 的清单在 Betway 手动下单；Codex 只在必要时操作 Chrome/Betway 准备单张候选票并填金额，且必须停在 `请下注` / `确认下注` 前。
+7. 准备执行：真钱模式优先让用户按 Codex 的清单在 Betway 手动下单；Codex 只在必要时操作 Chrome/Betway 准备单张候选票并填金额，且必须停在 `请下注` / `确认下注` 前。模拟/委托执行模式下，Codex 可在核对比赛、盘口、选项、金额、总投入、赔率格式和串关模式后点击最终确认。
 8. 成交后记录：只有用户最终提交成功，并提供成功页、截图、确认号或明确口述成功后，才能写入 `bet_slip` 和资金流水。
 
 ## 盘口选择纪律
@@ -72,6 +72,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - BW / 沙盟体育赛前盘口优先走多源编排命令：`pnpm sync:match-odds -- --date <本地日期> --scope common` dry-run 后再 `--write`。该命令先跑只读 SABA API，并检查每场盘口覆盖度；若 SABA visitor API 只返回主盘口或 `MarketCount=1`，不能把结果当完整盘口，必须用登录态页面文本/其它可比来源补齐后再用于下注分析。
 - SABA 同一对球队可能同时有普通比赛和 `哪一队可晋级` 等特殊赛事；同步赔率时必须优先基础联赛、`Parentmatchid=0`、`MarketCount` 更高的普通比赛事件，不能让 `MarketCount=1` 的特殊市场覆盖普通比赛。
 - SABA 足球常用盘口里 `BetTypeId=16` 是半场/全场组合盘，系统 key 为 `full_time:half_full`；半场波胆是 `BetTypeId=405`。用户要求半全场时，必须验证最新赔率快照包含 `full_time:half_full` 后才算完成。
+- SABA 主客顺序可能与本地赛程相反；胜平负/让球等按队名写入即可，但波胆、半场波胆等比分选项必须翻转为本地 `matches.home_team vs matches.away_team` 顺序后再入库和分析。
 - `pnpm capture:saba-odds` 仍可作为底层诊断命令；`pnpm capture:chrome-odds-text` 是登录态 Chrome 比赛详情页文本落盘兜底，`pnpm capture:bw-odds` 是已复制文本解析兜底。不要让用户逐场截图作为日常方案。
 - 当 BW 外壳能打开但 `/cn/sports/` 仍停在首页、页面文本为空、静态资源/TLS 报错时，优先判断为代理或站点访问问题；此时先用 SABA visitor API 枚举或要求用户切换代理/打开详情页，不要把空页面写成完整赔率。
 - `pnpm capture:chrome-odds-text -- --match-id <id>` 只允许复制当前 Chrome 页面文本到 `tmp/bw-odds/<date>/<matchNumber>.txt`，不得点击下注控件；复制结果必须通过目标球队和盘口分类校验，随后仍需 `sync:match-odds --fallback-text-dir` dry-run 确认后再 `--write`。
@@ -83,10 +84,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 默认真实资金下注，除非用户明确说模拟或 API payload 传 `isRealMoney=false`。
 - Codex 当前资金以系统 `codex` 账本为准；User 总账户余额只是平台资金池，不等于 Codex 可随意使用。
 - 普通单关上限 `10%`，高信心单关上限 `20%`，串关单票上限 `5%`，单张串关最多 7 legs；每日真实资金本金硬上限 `25%` 优先于单日最大亏损 `40%`。
-- 真实下注最终提交必须由用户确认或用户点击；Codex 不得点击最后提交按钮。
+- 真实资金下注最终提交必须由用户确认或用户点击；Codex 不得点击最后提交按钮。若用户明确声明当前平台为模拟/虚拟资金并授权 AI 代点指定注单或批次，Codex 可以点击最后提交按钮，但必须先完成票夹核对，且成功后按模拟/委托执行备注记录。
 - 准备好的 Betway 票夹不是成交记录。提交失败、用户没点、选项关闭或赔率超出容忍区间时，不得写入成交注单。
 - 成交记录必须保留 `decision_by=codex`、`placed_by=user`、`portfolio_id=codex`、`platform_account=betway-main`、`is_real_money=true`，除非用户明确另行说明。
 - 滚球锁利窗口必须先给可执行结论：买什么、各买多少、总投入、最低锁定收益和原票继续命中收益。公式、长分析和情绪安抚放后面；窗口消失后要改称救火/追救，不能继续按锁利预算重仓。
+- 对冲前必须先计算“不对冲”的最大损失、原票命中上行、新增对冲成本和全分支最低收益。小本金高赔率票如果不对冲最多只亏很少，除非能证明全分支保本/锁利，否则默认让它跑；买几个相邻比分只能叫路径覆盖，不能包装成稳定对冲。
 - 用户赛后只给平台最终余额、且中途存在未逐单记录的滚球/追救投注时，只能用明确备注的 `adjustment` 对齐账本；不得为了补明细而伪造 `bet_slip`。
 
 ## 长会话沉淀要求

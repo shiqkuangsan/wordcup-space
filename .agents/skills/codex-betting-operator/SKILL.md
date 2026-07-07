@@ -136,18 +136,28 @@ Only `bet` may become a `bet_intent`. If an idea is uncertain, keep it as observ
 
 ## Execution Confirmation
 
-Codex may guide the user or operate Chrome to prepare a bet, but must stop before
-the final submit/place-bet action. The final external submission requires the
-user's explicit confirmation at action time. If execution succeeds, then record a
-`bet_slip`; if execution fails or the user does not confirm, do not record a
-slip.
+Codex may guide the user or operate Chrome to prepare a bet. In real-money mode,
+Codex must stop before the final submit/place-bet action unless the user is
+actively handling the final confirmation.
+
+Simulation / delegated execution exception: if the local project owner clearly
+states that the current bookmaker session is simulated, demo-only, fake-money, or
+otherwise has no real-money consequence, and explicitly authorizes Codex to
+submit the exact ticket or exact batch, Codex may click the final
+`请下注` / `确认下注` control. Before doing so, Codex must verify the visible
+betslip match, market, selection, stake, total stake, odds format, and mode. If
+the visible ticket differs from the requested ticket, stop and ask.
+
+If execution succeeds, then record a `bet_slip`; if execution fails or the user
+has not granted the simulation/delegated exception, do not record a slip.
 
 Default real-money execution path: the user places Betway tickets manually from
 Codex's written plan, then sends success screenshots or confirmation refs for
 Codex to record. Chrome operation is for reading odds, locating markets, and at
-most preparing one ticket at a time. Do not default to continuous multi-ticket
-Betway operation because the betslip can retain old selections, boosted cards,
-and receipt state; this creates unnecessary execution risk.
+most preparing one ticket at a time. In simulation/delegated mode, Codex may run
+multi-ticket execution, but must clear or verify the betslip between tickets and
+must stop on any receipt, stale selection, odds-change warning, mixed state, or
+unexpected prompt.
 
 ## Betway Execution Hygiene
 
@@ -189,6 +199,13 @@ combination (`full_time:half_full`), not half-time correct score. The actual
 half-time correct score feed uses `BetTypeId=405`. If half/full-time is required
 by the user, verify that the latest database snapshot contains
 `full_time:half_full` before saying the common odds sync is complete.
+
+When SABA's home/away order is reversed from the local `matches` row, team-name
+selections such as moneyline and handicap can still be stored by team name, but
+score selections must be flipped into the local match order before writing. Do
+not use correct-score odds for betting analysis until this order check has
+passed. Do not flip total-goals range labels such as `0-1`, `2-3`, or `4-6`;
+those are goal-count buckets, not match scorelines.
 
 Use `--scope all` only when raw
 archival coverage is more important than UI cleanliness, because unknown SABA
@@ -264,7 +281,9 @@ Required handoff checks:
   count, not separate `单关` rows.
 - Odds: final displayed odds must pass the intent's minimum executable odds and
   the 6% tolerance check.
-- Submit: stop at `请下注` / `确认下注`; the user must click the final submit.
+- Submit: in real-money mode, stop at `请下注` / `确认下注`; the user must click
+  the final submit. In simulation/delegated mode, Codex may click final submit
+  only after verifying the exact ticket and stake.
 
 Common Betway pitfalls:
 
@@ -478,6 +497,29 @@ sample of settled bets by market type:
   inline, but do not wait for perfect bookkeeping before giving a stake table.
   If no complete lock is possible, say that immediately and present only the
   least-bad defensive option.
+- Before proposing a hedge, compare the no-hedge baseline. State the original
+  remaining exposure, worst-case loss if doing nothing, current upside if the
+  original ticket hits, proposed hedge cost, and the new minimum result across
+  all branches. If the original worst-case loss is tiny, such as a 10 RMB
+  high-odds lottery ticket, do not spend hundreds to "protect" it unless a true
+  all-branch lock exists. In that case, `do nothing / let it run` is the default
+  professional answer.
+- Distinguish true hedging from path coverage. A true hedge must cover every
+  mutually exclusive result branch in the stated scope and produce the claimed
+  floor after all new stakes. Buying several correct scores, selected 1X2
+  outcomes, DNB/handicap alternatives, or totals is only partial protection
+  unless uncovered scores and "other score" paths are also handled. Label these
+  as `risk reduction`, not `stable profit`.
+- For exact-score parlays, never imply that adding nearby scorelines creates a
+  guaranteed hedge. First list the original winning score, all visible covered
+  scorelines, "other score", and common live branches such as no more goals,
+  one home goal, one away goal, and multiple late goals. If any feasible branch
+  still loses both the original ticket and all hedge tickets, say `no stable
+  win is available` before giving optional small-cover suggestions.
+- Use an inverse-odds sanity check when trying to cover all standalone branches:
+  if the sum of `1 / decimalOdds` for the full mutually exclusive coverage is
+  above 1 and the original ticket does not pay on those branches, the hedge
+  cannot guarantee profit by itself. Do not hide this behind stake tables.
 - Treat missed live hedges as process failures, not only bad luck. If a hedge
   window closes before execution because Codex delayed the conclusion, record
   the lesson and make the next live hedge response more direct. After the
@@ -528,8 +570,9 @@ long daily discussion. Produce and execute the following sequence:
 4. Build a singles plan: buy, pass, or watch for each selected market.
 5. Build a parlay plan separately: ordinary parlays and optional correct-score
    parlay candidates, with total stake room checked against the 25% daily cap.
-6. Prepare the Betway betslip only for final approved candidates and stop before
-   `请下注` / `确认下注`.
+6. Prepare the Betway betslip only for final approved candidates. In real-money
+   mode, stop before `请下注` / `确认下注`; in simulation/delegated mode, Codex may
+   submit after the exact-ticket checks pass.
 7. After the user submits and shares success evidence, record the slips.
 
 ## Required Output For A Bet

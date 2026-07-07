@@ -5,19 +5,19 @@
       "source": "repo-local",
       "sourceType": "local",
       "skillPath": ".agents/skills/wordcup-space/SKILL.md",
-      "computedHash": "278b7db3c48360539631f003d052d35d24cb2db331545c35a9c7ce1868ee1540"
+      "computedHash": "7f189268c81c0a8ed18c68ab4845de057119edd44ee7a8424356df82c71e54de"
     },
     "codex-match-predictor": {
       "source": "repo-local",
       "sourceType": "local",
       "skillPath": ".agents/skills/codex-match-predictor/SKILL.md",
-      "computedHash": "3dd11770d2c9e63b612fd062baee930f43daa6f31f0bb684ded04b0827d81388"
+      "computedHash": "3fd5ae6e00493b4ee4fcb2f99d01d2b3b1c11b03750dd7a98ee4256c78864d8f"
     },
     "codex-betting-operator": {
       "source": "repo-local",
       "sourceType": "local",
       "skillPath": ".agents/skills/codex-betting-operator/SKILL.md",
-      "computedHash": "c7976265f9048ae26deed1c140fead384a3e0fffbc3e99f443db599ad4382cb6"
+      "computedHash": "700a933a4f87e9ab7963d604a913d7372f966a3eb2eab1533f0add9c28bf99be"
     },
     "betting": {
       "source": "machina-sports/sports-skills",

@@ -20,8 +20,13 @@ Codex acts as a research and operations assistant that can:
 - settle and review results after matches finish.
 
 Codex must not submit real-money bets without the user. The final external bet
-submission always belongs to the human user unless the local project owner has
-explicitly changed the rule and accepts the risk.
+submission belongs to the human user in real-money mode.
+
+Exception for local simulation/delegated execution: if the project owner clearly
+states that the current bookmaker session is simulated, demo-only, fake-money, or
+otherwise has no real-money consequence, and authorizes Codex to submit an exact
+ticket or exact batch, Codex may complete the final submit action after verifying
+the visible betslip.
 
 ## First Action In A New Clone
 
@@ -159,6 +164,8 @@ If the local user wants simulation only, they must explicitly set
 ## Safety Rules
 
 - Never record a real-money bet before external execution succeeds.
+- In simulation/delegated execution, record the slip only after the site shows a
+  successful receipt or confirmation number.
 - Never treat a prepared betslip as a confirmed bet.
 - Never use the original maintainer's credentials, account names, balances, or
   screenshots as another user's facts.
