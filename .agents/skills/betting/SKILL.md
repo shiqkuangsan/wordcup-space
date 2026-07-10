@@ -3,7 +3,7 @@ name: betting
 description: |
   Betting analysis — odds conversion, de-vigging, edge detection, Kelly criterion, arbitrage detection, parlay analysis, and line movement. Pure computation, no API calls. Works with odds from any source: ESPN (American odds), Polymarket (decimal probabilities), Kalshi (integer probabilities).
 
-  Use when: user asks about bet sizing, expected value, edge analysis, Kelly criterion, arbitrage, parlays, line movement, odds conversion, or comparing odds across sources. Also use when you have odds from ESPN and a prediction market price and want to evaluate whether a bet has positive expected value.
+  Use when: user asks about bet sizing, expected value, edge analysis, Kelly criterion, arbitrage, hedging, profit locking, weighted outcome coverage, parlays, line movement, odds conversion, or comparing odds across sources. Also use when you have odds from ESPN and a prediction market price and want to evaluate whether a bet has positive expected value.
   Don't use when: user asks for live odds or market data — use polymarket, kalshi, or the sport-specific skill to fetch odds first, then use this skill to analyze them.
 license: MIT
 metadata:
@@ -61,6 +61,40 @@ CRITICAL: Before calling any analysis command, verify:
 1. Get best price per outcome from different sources (Polymarket home at 0.48, Kalshi away at 0.49)
 2. `find_arbitrage --market_probs=0.48,0.49 --labels=home,away`
 3. Total implied 0.97 (< 1.0) → arbitrage found, guaranteed ROI: 3.09%
+
+### Hedge an Existing Ticket Portfolio
+
+Use a state matrix when existing tickets pay only in specific outcomes:
+
+1. Define exhaustive, mutually exclusive result states. Correct-score work must
+   include listed scores plus the bookmaker's `other score` state.
+2. Record each existing ticket's total return in every state where it wins.
+3. Expand every proposed combination market into the states where it pays.
+4. For state `s`, calculate:
+
+   `net_s = existingReturn_s + sum(stake_j * decimalOdds_j for winning j) - existingStakes - sum(stake_j)`
+
+5. A strict lock exists only when `min(net_s) > 0`. If any state is negative,
+   label the plan `weighted coverage` or `risk reduction` and report that state's
+   maximum loss.
+
+For a disjoint branch with target return `R`, stake `R / decimalOdds`. Compare a
+bundle with its missing exact scores using cost per unit return:
+
+- bundle cost: `1 / bundleOdds`
+- separate-score cost: `sum(1 / scoreOdds)`
+
+Use the cheaper complete cover after removing states already paid by existing
+tickets. Do not call a portfolio profitable merely because every broad
+win/draw/loss category contains a winning ticket; all old and new stakes count.
+Cash out is guaranteed return only when an actual offer is visible and accepted.
+A later-match parlay adds unresolved states and therefore cannot lock the current
+match by itself.
+
+When the user permits losing states, keep the matrix exhaustive, assign larger
+target returns to favored states, and explicitly list the sacrificed states.
+Weighting changes the return distribution; it does not convert partial coverage
+into a strict hedge.
 
 ### Parlay Evaluation
 

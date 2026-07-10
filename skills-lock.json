@@ -17,13 +17,13 @@
       "source": "repo-local",
       "sourceType": "local",
       "skillPath": ".agents/skills/codex-betting-operator/SKILL.md",
-      "computedHash": "700a933a4f87e9ab7963d604a913d7372f966a3eb2eab1533f0add9c28bf99be"
+      "computedHash": "4547e38a77fa72b5a1c940623771de4fcfab69088c1a834b7e4c1667944561f2"
     },
     "betting": {
       "source": "machina-sports/sports-skills",
       "sourceType": "github",
       "skillPath": ".agents/skills/betting/SKILL.md",
-      "computedHash": "b03000178c99cd880c99a957391e6c9c4f3b481133f825ca640f6e9f402d994a"
+      "computedHash": "855cea59543b6b05ce17ed75526231e2f39b9ff7d28abf15f3163989699d712a"
     },
     "football-data": {
       "source": "machina-sports/sports-skills",

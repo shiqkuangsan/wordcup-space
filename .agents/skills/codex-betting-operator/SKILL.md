@@ -1,6 +1,6 @@
 ---
 name: codex-betting-operator
-description: Use when Codex is acting as an autonomous World Cup betting operator in wordcup-space: choosing weekly matches, reading Betway odds from Chrome/screenshots, deciding markets/stakes/parlays, creating intents, recording slips, settling, or reviewing historical betting performance.
+description: Use when Codex is acting as an autonomous World Cup betting operator in wordcup-space: choosing weekly matches, reading Betway odds from Chrome/screenshots, deciding markets/stakes/parlays, hedging open slips, creating intents, recording slips, settling, or reviewing historical betting performance.
 ---
 
 # Codex Betting Operator
@@ -520,6 +520,40 @@ sample of settled bets by market type:
   if the sum of `1 / decimalOdds` for the full mutually exclusive coverage is
   above 1 and the original ticket does not pay on those branches, the hedge
   cannot guarantee profit by itself. Do not hide this behind stake tables.
+- When an early parlay leg wins and a correct-score leg remains, treat the open
+  slip as a contingent payout on that exact score. Do not start with a new match
+  prediction or a directional single. First build the complete final-score
+  state matrix using every open slip as an existing payout in the states where
+  it wins. The branch result is:
+  `existing payouts + new winning returns - all existing stakes - all new stakes`.
+  "Every result has a winning ticket" is not enough; strict profit locking
+  requires the minimum branch result to be positive.
+- Do not assume a correct-score parlay offers useful cash out or an exchange lay.
+  Check the actual ticket. If cash out is absent or priced below the objective,
+  continue with the state matrix instead of repeatedly proposing it. A reverse
+  correct-score price near `1.01` is normally unusable for meaningful locking;
+  show the required stake and resulting floor once, then discard it.
+- Expand combination markets into their exact state sets before using them. For
+  example, `home/draw + under 2.5` covers only home wins or draws with zero, one,
+  or two total goals. Verify the displayed threshold carefully: `under 1.5` and
+  `under 2.5` are materially different branches. Never infer a market from its
+  position in a screenshot.
+- Compare overlapping combination markets against buying only the still-missing
+  exact scores. For a target return `R`, a branch at decimal odds `O` costs
+  `R / O`; separate mutually exclusive scores cost
+  `R * sum(1 / scoreOdds)`. Existing high-payout scores are prepaid coverage, so
+  a bundle that includes them can be less efficient than narrower score bets.
+- If the user accepts one or more losing states, reclassify the plan as
+  `weighted coverage`, not strict locking. Weight stakes only after calculating
+  total portfolio cost, and publish one row per exhaustive state group with its
+  total return and net P/L. Name every accepted negative state and its maximum
+  loss; do not summarize it only as "win/draw/loss covered".
+- A parlay leg from a later match does not lock profit on the current match. It
+  adds another unresolved state dimension. Use later legs only as upside after
+  the current-match floor is established, and never count their potential
+  return as guaranteed recovery.
+- If the user decides not to hedge, stop immediately: create no hedge intent,
+  record no hedge slip, and preserve the computed state matrix as analysis only.
 - Treat missed live hedges as process failures, not only bad luck. If a hedge
   window closes before execution because Codex delayed the conclusion, record
   the lesson and make the next live hedge response more direct. After the
